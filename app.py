@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import pandas as pd
 import streamlit as st
@@ -36,7 +37,6 @@ EFFECTIF_SMC = [
     "Keelyan Portut",
     "Mohamed Hafid",
     "Salim Diakité",
-    "Autre" 
 ]
 
 
@@ -45,9 +45,22 @@ def charger_donnees():
     matchs = pd.read_csv(MATCHS_FILE)
     for col in matchs.columns:
       matchs[col] = matchs[col].fillna("").astype(str)
+    # S'assurer que les colonnes Date et Heure existent dans les vieux fichiers CSV
+    if "Date" not in matchs.columns:
+      matchs["Date"] = "2026-08-25"
+    if "Heure" not in matchs.columns:
+      matchs["Heure"] = "20:00"
   else:
     matchs = pd.DataFrame(
-        columns=["ID Match", "Adversaire", "Résultat", "Score Réel", "Buteurs"]
+        columns=[
+            "ID Match",
+            "Adversaire",
+            "Date",
+            "Heure",
+            "Résultat",
+            "Score Réel",
+            "Buteurs",
+        ]
     )
 
   if os.path.exists(PRONOS_FILE):
@@ -98,15 +111,32 @@ if menu == "📝 Faire mon Prono":
         " un !"
     )
   else:
-    # On récupère d'abord les matchs dispos
-    matchs_disponibles = df_matchs[df_matchs["Score Réel"] == ""][
-        "ID Match"
-    ].tolist()
+    maintenant = datetime.now()
+    matchs_disponibles = []
+
+    # On filtre les matchs dont le coup d'envoi n'est PAS encore passé
+    for idx, row in df_matchs.iterrows():
+      m_id = row["ID Match"]
+      date_str = row.get("Date", "2026-01-01")
+      heure_str = row.get("Heure", "00:00")
+      try:
+        coup_envoi = datetime.strptime(
+            f"{date_str} {heure_str}", "%Y-%m-%d %H:%M"
+        )
+        # Le match est dispo si on est AVANT le coup d'envoi ET qu'il n'a pas déjà un score réel validé
+        if maintenant < coup_envoi and str(row["Score Réel"]).strip() == "":
+          matchs_disponibles.append(m_id)
+      except Exception:
+        # En cas de format de date invalide par sécurité, on regarde juste si le score n'est pas rentré
+        if str(row["Score Réel"]).strip() == "":
+          matchs_disponibles.append(m_id)
 
     if not matchs_disponibles:
-      st.warning("Tous les matchs enregistrés sont déjà terminés !")
+      st.warning(
+          "🔒 Aucun match n'est ouvert actuellement (le coup d'envoi est passé ou"
+          " les matchs sont terminés)."
+      )
     else:
-      # Saisie hors formulaire pour que les choix réagissent instantanément à l'écran
       nom_utilisateur = st.text_input("Ton Prénom / Pseudo")
       match_choisi = st.selectbox("Choisis le match concerné", matchs_disponibles)
 
@@ -118,27 +148,40 @@ if menu == "📝 Faire mon Prono":
         prono_score = st.text_input("Score exact pronostiqué (ex: 2-0)")
 
       with col2:
-        # Sélection multiple dans la liste déroulante
         buteurs_selectionnes = st.multiselect(
             "Buteur(s) pronostiqué(s) (choisis-en un ou plusieurs)", EFFECTIF_SMC
         )
 
       st.markdown("---")
 
-      # Le menu déroulant du doublé s'actualise tout de suite en fonction des choix ci-dessus
       options_double = ["Aucun"] + buteurs_selectionnes
       annonce_double = st.selectbox(
           "Annonces-tu un doublé ? (Choisis parmi tes buteurs ci-dessus)",
           options_double,
       )
 
-      # Le bouton de validation global
       if st.button("Valider mon pronostic 🚀"):
         if not nom_utilisateur.strip():
           st.error("⚠️ Tu dois entrer ton prénom ou pseudo !")
         elif not buteurs_selectionnes:
           st.error("⚠️ Tu dois sélectionner au moins un buteur !")
         else:
+          # Double vérification de sécurité au moment du clic
+          match_info = df_matchs[df_matchs["ID Match"] == match_choisi].iloc[0]
+          try:
+            coup_envoi = datetime.strptime(
+                f"{match_info.get('Date', '2026-01-01')} {match_info.get('Heure', '00:00')}",
+                "%Y-%m-%d %H:%M",
+            )
+            if datetime.now() >= coup_envoi:
+              st.error(
+                  "❌ Trop tard ! Le coup d'envoi de ce match a été donné, les"
+                  " pronos sont verrouillés."
+              )
+              st.stop()
+          except Exception:
+            pass
+
           choix_clean = prono_1n2.split()[0]
           buteurs_texte_str = ", ".join(buteurs_selectionnes)
 
@@ -211,6 +254,15 @@ elif menu == "⚙️ Espace Admin":
   with st.form("form_admin_match"):
     id_match = st.text_input("Nom du Match (ex: SMC - Bastia)")
     adversaire = st.text_input("Équipe adverse")
+
+    col_d1, col_d2 = st.columns(2)
+    with col_d1:
+      date_match = st.text_input("Date du match (AAAA-MM-JJ)", value="2026-08-29")
+    with col_d2:
+      heure_match = st.text_input(
+          "Heure du coup d'envoi (HH:MM)", value="20:00"
+      )
+
     resultat_reel = st.selectbox(
         "Résultat Réel (À remplir après le match)", ["", "1", "N", "2"]
     )
@@ -224,6 +276,8 @@ elif menu == "⚙️ Espace Admin":
         existing_m_idx = df_matchs[df_matchs["ID Match"] == id_match].index
         if not existing_m_idx.empty:
           idx = existing_m_idx[0]
+          df_matchs.loc[idx, "Date"] = date_match
+          df_matchs.loc[idx, "Heure"] = heure_match
           df_matchs.loc[idx, "Résultat"] = resultat_reel
           df_matchs.loc[idx, "Score Réel"] = score_reel
           df_matchs.loc[idx, "Buteurs"] = buteurs_reels
@@ -232,6 +286,8 @@ elif menu == "⚙️ Espace Admin":
           new_m = pd.DataFrame({
               "ID Match": [id_match],
               "Adversaire": [adversaire],
+              "Date": [date_match],
+              "Heure": [heure_match],
               "Résultat": [resultat_reel],
               "Score Réel": [score_reel],
               "Buteurs": [buteurs_reels],
