@@ -17,7 +17,6 @@ def charger_donnees():
   # Charger les matchs
   if os.path.exists(MATCHS_FILE):
     matchs = pd.read_csv(MATCHS_FILE)
-    # S'assurer que les colonnes ont le bon type string pour éviter les NaN
     for col in matchs.columns:
       matchs[col] = matchs[col].fillna("").astype(str)
   else:
@@ -32,7 +31,7 @@ def charger_donnees():
       if col != "Points":
         pronos[col] = pronos[col].fillna("").astype(str)
       else:
-        pronos[col] = pd.to_numeric(pronos[col], errors="fillna").fillna(0)
+        pronos[col] = pd.to_numeric(pronos[col], errors="coerce").fillna(0)
   else:
     pronos = pd.DataFrame(
         columns=[
@@ -78,7 +77,6 @@ if menu == "📝 Faire mon Prono":
     with st.form("form_user_prono"):
       nom_utilisateur = st.text_input("Ton Prénom / Pseudo")
 
-      # Matchs sans score réel
       matchs_disponibles = df_matchs[df_matchs["Score Réel"] == ""][
           "ID Match"
       ].tolist()
@@ -111,7 +109,6 @@ if menu == "📝 Faire mon Prono":
           else:
             choix_clean = prono_1n2.split()[0]
 
-            # Vérifier si ce participant a déjà pronostiqué ce match
             existing_idx = df_pronos[
                 (df_pronos["Participant"] == nom_utilisateur)
                 & (df_pronos["Match"] == match_choisi)
@@ -139,7 +136,6 @@ if menu == "📝 Faire mon Prono":
               df_pronos = pd.concat([df_pronos, new_row], ignore_index=True)
               st.success(f"🎉 Validé {nom_utilisateur} !")
 
-            # Sauvegarder dans le fichier CSV
             sauvegarder_donnees(df_matchs, df_pronos)
             st.rerun()
 
@@ -220,7 +216,6 @@ elif menu == "⚙️ Espace Admin":
           df_matchs = pd.concat([df_matchs, new_m], ignore_index=True)
           st.success(f"Match '{id_match}' créé avec succès !")
 
-        # Sauvegarder dans le fichier CSV
         sauvegarder_donnees(df_matchs, df_pronos)
         st.rerun()
 
@@ -263,7 +258,6 @@ elif menu == "⚙️ Espace Admin":
           df_pronos.loc[index, "Points"] = pts
           compteur_maj += 1
 
-    # Sauvegarder les nouveaux points
     sauvegarder_donnees(df_matchs, df_pronos)
     st.success(
         f"Calcul terminé ! {compteur_maj} pronostics évalués avec succès."
