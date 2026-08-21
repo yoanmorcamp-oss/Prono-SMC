@@ -12,9 +12,36 @@ st.title("⚽ Concours de Pronos - Stade Malherbe de Caen")
 MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
 
+# Effectif officiel actualisé du SMC
+EFFECTIF_SMC = [
+    "Aucun",
+    "Anthony Mandréa",
+    "Yannis Clémentia",
+    "Parfait Mandanda",
+    "Nassim Titebah",
+    "Diabé Bolumbu",
+    "Sacha M'Baka",
+    "Dennis Appiah",
+    "Nazim Babai",
+    "Hugo Lamouliatte",
+    "Josué Kimboma",
+    "Freddy Bomo",
+    "Gabin Tome",
+    "Léo Milliner",
+    "Zoumana Bagbema",
+    "Mohamed El Idrissi",
+    "Samuel Noireau-Dauriat",
+    "Fahd El Khoumisti",
+    "Ivann Botella",
+    "Armand Gnanduillet",
+    "Keelyan Portut",
+    "Mohamed Hafid",
+    "Salim Diakité",
+    "Autre joueur",
+]
+
 
 def charger_donnees():
-  # Charger les matchs
   if os.path.exists(MATCHS_FILE):
     matchs = pd.read_csv(MATCHS_FILE)
     for col in matchs.columns:
@@ -24,7 +51,6 @@ def charger_donnees():
         columns=["ID Match", "Adversaire", "Résultat", "Score Réel", "Buteurs"]
     )
 
-  # Charger les pronos
   if os.path.exists(PRONOS_FILE):
     pronos = pd.read_csv(PRONOS_FILE)
     for col in pronos.columns:
@@ -39,8 +65,9 @@ def charger_donnees():
             "Match",
             "Prono (1N2)",
             "Score",
-            "Buteur",
-            "Doublé ?",
+            "Buteur 1",
+            "Buteur 2",
+            "Annonce Doublé",
             "Points",
         ]
     )
@@ -53,7 +80,6 @@ def sauvegarder_donnees(matchs, pronos):
   pronos.to_csv(PRONOS_FILE, index=False)
 
 
-# Charger les données actuelles
 df_matchs, df_pronos = charger_donnees()
 
 # --- MENU LATÉRAL PROPRE ---
@@ -96,10 +122,23 @@ if menu == "📝 Faire mon Prono":
           prono_score = st.text_input("Score exact pronostiqué (ex: 2-0)")
 
         with col2:
-          prono_buteur = st.text_input("Buteur pronostiqué (ex: Mendy)")
-          annonce_double = st.selectbox(
-              "Annonces-tu un doublé de ce buteur ?", ["NON", "OUI"]
+          buteur_1 = st.selectbox("1er Buteur pronostiqué", EFFECTIF_SMC)
+          buteur_2 = st.selectbox(
+              "2ème Buteur pronostiqué (optionnel)", EFFECTIF_SMC
           )
+
+        st.markdown("---")
+        # Sélection claire pour le doublé en fonction des buteurs choisis
+        buteurs_possibles_pour_double = ["Aucun"]
+        if buteur_1 != "Aucun":
+          buteurs_possibles_pour_double.append(buteur_1)
+        if buteur_2 != "Aucun" and buteur_2 != buteur_1:
+          buteurs_possibles_pour_double.append(buteur_2)
+
+        annonce_double = st.selectbox(
+            "Annonces-tu un doublé ? Si oui, de quel joueur ?",
+            buteurs_possibles_pour_double,
+        )
 
         submit_user_prono = st.form_submit_button("Valider mon pronostic 🚀")
 
@@ -118,8 +157,9 @@ if menu == "📝 Faire mon Prono":
               idx = existing_idx[0]
               df_pronos.loc[idx, "Prono (1N2)"] = choix_clean
               df_pronos.loc[idx, "Score"] = prono_score
-              df_pronos.loc[idx, "Buteur"] = prono_buteur
-              df_pronos.loc[idx, "Doublé ?"] = annonce_double
+              df_pronos.loc[idx, "Buteur 1"] = buteur_1
+              df_pronos.loc[idx, "Buteur 2"] = buteur_2
+              df_pronos.loc[idx, "Annonce Doublé"] = annonce_double
               st.success(
                   f"👍 Mis à jour {nom_utilisateur} pour {match_choisi} !"
               )
@@ -129,8 +169,9 @@ if menu == "📝 Faire mon Prono":
                   "Match": [match_choisi],
                   "Prono (1N2)": [choix_clean],
                   "Score": [prono_score],
-                  "Buteur": [prono_buteur],
-                  "Doublé ?": [annonce_double],
+                  "Buteur 1": [buteur_1],
+                  "Buteur 2": [buteur_2],
+                  "Annonce Doublé": [annonce_double],
                   "Points": [0],
               })
               df_pronos = pd.concat([df_pronos, new_row], ignore_index=True)
@@ -142,17 +183,7 @@ if menu == "📝 Faire mon Prono":
     st.markdown("---")
     st.subheader("👀 Pronos enregistrés :")
     if not df_pronos.empty:
-      st.dataframe(
-          df_pronos[[
-              "Participant",
-              "Match",
-              "Prono (1N2)",
-              "Score",
-              "Buteur",
-              "Doublé ?",
-          ]],
-          use_container_width=True,
-      )
+      st.dataframe(df_pronos, use_container_width=True)
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +193,9 @@ elif menu == "🏆 Classement":
   st.header("🏆 Classement Général de la Saison")
 
   if not df_pronos.empty:
-    df_pronos["Points"] = pd.to_numeric(df_pronos["Points"], errors="coerce").fillna(0)
+    df_pronos["Points"] = pd.to_numeric(
+        df_pronos["Points"], errors="coerce"
+    ).fillna(0)
     classement = (
         df_pronos.groupby("Participant")["Points"].sum().reset_index()
     )
@@ -192,7 +225,9 @@ elif menu == "⚙️ Espace Admin":
         "Résultat Réel (À remplir après le match)", ["", "1", "N", "2"]
     )
     score_reel = st.text_input("Score Réel (ex: 2-1)")
-    buteurs_reels = st.text_input("Buteurs réels (ex: Mendy, Mendy)")
+    buteurs_reels = st.text_input(
+        "Buteurs réels (ex: Botella, Hafid)"
+    )  # Séparés par des virgules
 
     submit_admin_match = st.form_submit_button("Enregistrer le match")
 
@@ -237,23 +272,39 @@ elif menu == "⚙️ Espace Admin":
         buts_reel = str(match_correspondant.iloc[0]["Buteurs"]).lower()
 
         if res_reel != "":
+          # 1N2
           if str(prono["Prono (1N2)"]).strip() == res_reel:
             pts += 2
+          # Score exact
           if str(prono["Score"]).strip() == sc_reel:
             pts += 10
 
-          buteur_prono = str(prono["Buteur"]).strip().lower()
-          if buteur_prono != "" and buteur_prono != "aucun":
-            liste_buteurs = [b.strip() for b in buts_reel.split(",")]
-            nb_buts = liste_buteurs.count(buteur_prono)
-            if nb_buts > 0:
-              pts += nb_buts * 3
+          liste_buteurs_reels = [
+              b.strip().lower() for b in buts_reel.split(",") if b.strip() != ""
+          ]
 
-            if str(prono["Doublé ?"]).strip() == "OUI":
-              if nb_buts >= 2:
-                pts += 5
-              else:
-                pts -= 3
+          # Gestion Buteur 1
+          b1 = str(prono["Buteur 1"]).strip().lower()
+          if b1 != "" and b1 != "aucun":
+            nb_1 = liste_buteurs_reels.count(b1)
+            if nb_1 > 0:
+              pts += nb_1 * 3
+
+          # Gestion Buteur 2
+          b2 = str(prono["Buteur 2"]).strip().lower()
+          if b2 != "" and b2 != "aucun":
+            nb_2 = liste_buteurs_reels.count(b2)
+            if nb_2 > 0:
+              pts += nb_2 * 3
+
+          # Gestion du doublé annoncé
+          joueur_double = str(prono["Annonce Doublé"]).strip().lower()
+          if joueur_double != "" and joueur_double != "aucun":
+            nb_buts_joueur = liste_buteurs_reels.count(joueur_double)
+            if nb_buts_joueur >= 2:
+              pts += 5
+            else:
+              pts -= 3
 
           df_pronos.loc[index, "Points"] = pts
           compteur_maj += 1
