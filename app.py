@@ -12,34 +12,6 @@ st.title("⚽ Concours de Pronos - Stade Malherbe de Caen")
 MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
 
-# Effectif officiel actualisé du SMC
-EFFECTIF_SMC = [
-    "Aucun",
-    "Anthony Mandréa",
-    "Yannis Clémentia",
-    "Parfait Mandanda",
-    "Nassim Titebah",
-    "Diabé Bolumbu",
-    "Sacha M'Baka",
-    "Dennis Appiah",
-    "Nazim Babai",
-    "Hugo Lamouliatte",
-    "Josué Kimboma",
-    "Freddy Bomo",
-    "Gabin Tome",
-    "Léo Milliner",
-    "Zoumana Bagbema",
-    "Mohamed El Idrissi",
-    "Samuel Noireau-Dauriat",
-    "Fahd El Khoumisti",
-    "Ivann Botella",
-    "Armand Gnanduillet",
-    "Keelyan Portut",
-    "Mohamed Hafid",
-    "Salim Diakité",
-    "Autre joueur",
-]
-
 
 def charger_donnees():
   if os.path.exists(MATCHS_FILE):
@@ -65,8 +37,7 @@ def charger_donnees():
             "Match",
             "Prono (1N2)",
             "Score",
-            "Buteur 1",
-            "Buteur 2",
+            "Buteurs Pronostiqués",
             "Annonce Doublé",
             "Points",
         ]
@@ -122,22 +93,22 @@ if menu == "📝 Faire mon Prono":
           prono_score = st.text_input("Score exact pronostiqué (ex: 2-0)")
 
         with col2:
-          buteur_1 = st.selectbox("1er Buteur pronostiqué", EFFECTIF_SMC)
-          buteur_2 = st.selectbox(
-              "2ème Buteur pronostiqué (optionnel)", EFFECTIF_SMC
+          buteurs_saisis = st.text_input(
+              "Buteur(s) pronostiqué(s) (sépare par des virgules, ex: Botella,"
+              " Hafid)"
           )
 
         st.markdown("---")
-        # Sélection claire pour le doublé en fonction des buteurs choisis
-        buteurs_possibles_pour_double = ["Aucun"]
-        if buteur_1 != "Aucun":
-          buteurs_possibles_pour_double.append(buteur_1)
-        if buteur_2 != "Aucun" and buteur_2 != buteur_1:
-          buteurs_possibles_pour_double.append(buteur_2)
+
+        # Extraction automatique des joueurs saisis pour proposer le doublé
+        liste_joueurs_proposes = [
+            b.strip() for b in buteurs_saisis.split(",") if b.strip() != ""
+        ]
+        options_double = ["Aucun"] + liste_joueurs_proposes
 
         annonce_double = st.selectbox(
-            "Annonces-tu un doublé ? Si oui, de quel joueur ?",
-            buteurs_possibles_pour_double,
+            "Annonces-tu un doublé ? (Choisis parmi tes buteurs ci-dessus)",
+            options_double,
         )
 
         submit_user_prono = st.form_submit_button("Valider mon pronostic 🚀")
@@ -157,8 +128,7 @@ if menu == "📝 Faire mon Prono":
               idx = existing_idx[0]
               df_pronos.loc[idx, "Prono (1N2)"] = choix_clean
               df_pronos.loc[idx, "Score"] = prono_score
-              df_pronos.loc[idx, "Buteur 1"] = buteur_1
-              df_pronos.loc[idx, "Buteur 2"] = buteur_2
+              df_pronos.loc[idx, "Buteurs Pronostiqués"] = buteurs_saisis
               df_pronos.loc[idx, "Annonce Doublé"] = annonce_double
               st.success(
                   f"👍 Mis à jour {nom_utilisateur} pour {match_choisi} !"
@@ -169,8 +139,7 @@ if menu == "📝 Faire mon Prono":
                   "Match": [match_choisi],
                   "Prono (1N2)": [choix_clean],
                   "Score": [prono_score],
-                  "Buteur 1": [buteur_1],
-                  "Buteur 2": [buteur_2],
+                  "Buteurs Pronostiqués": [buteurs_saisis],
                   "Annonce Doublé": [annonce_double],
                   "Points": [0],
               })
@@ -225,9 +194,7 @@ elif menu == "⚙️ Espace Admin":
         "Résultat Réel (À remplir après le match)", ["", "1", "N", "2"]
     )
     score_reel = st.text_input("Score Réel (ex: 2-1)")
-    buteurs_reels = st.text_input(
-        "Buteurs réels (ex: Botella, Hafid)"
-    )  # Séparés par des virgules
+    buteurs_reels = st.text_input("Buteurs réels (ex: Botella, Hafid)")
 
     submit_admin_match = st.form_submit_button("Enregistrer le match")
 
@@ -283,19 +250,20 @@ elif menu == "⚙️ Espace Admin":
               b.strip().lower() for b in buts_reel.split(",") if b.strip() != ""
           ]
 
-          # Gestion Buteur 1
-          b1 = str(prono["Buteur 1"]).strip().lower()
-          if b1 != "" and b1 != "aucun":
-            nb_1 = liste_buteurs_reels.count(b1)
-            if nb_1 > 0:
-              pts += nb_1 * 3
+          # Buteurs pronostiqués en texte libre
+          buteurs_pronos_texte = str(
+              prono["Buteurs Pronostiqués"]
+          ).lower()
+          liste_buteurs_pronos = [
+              b.strip()
+              for b in buteurs_pronos_texte.split(",")
+              if b.strip() != ""
+          ]
 
-          # Gestion Buteur 2
-          b2 = str(prono["Buteur 2"]).strip().lower()
-          if b2 != "" and b2 != "aucun":
-            nb_2 = liste_buteurs_reels.count(b2)
-            if nb_2 > 0:
-              pts += nb_2 * 3
+          # Points pour chaque buteur trouvé dans le texte
+          for b_prono in liste_buteurs_pronos:
+            if b_prono in liste_buteurs_reels:
+              pts += 3  # ou le nombre de buts total mis par ce joueur si on veut faire simple
 
           # Gestion du doublé annoncé
           joueur_double = str(prono["Annonce Doublé"]).strip().lower()
