@@ -7,6 +7,9 @@ st.set_page_config(
     page_title="Pronos SMC - Saison 2026-2027", page_icon="⚽", layout="wide"
 )
 
+# --- MOT DE PASSE ADMIN (Modifie-le ici si besoin) ---
+MOT_DE_PASSE_ADMIN = "yoan"  # Change "yoan" par ton mot de passe secret
+
 # --- DESIGN STADE MALHERBE (PRO & LISIBLE) ---
 st.markdown("""
     <style>
@@ -60,13 +63,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- EN-TÊTE AVEC LE VRAI LOGO OFFICIEL DU SMC ---
+# --- EN-TÊTE AVEC TON LOGO LOCAL (logo_smc.png) ---
 col_logo, col_titre = st.columns([1, 8])
 with col_logo:
-  st.image(
-      "https://upload.wikimedia.org/wikipedia/fr/thumb/f/fa/Logo_Stade_Malherbe_Caen_2024.svg/langfr-300px-Logo_Stade_Malherbe_Caen_2024.svg.png",
-      width=85,
-  )
+  if os.path.exists("logo_smc.png"):
+    st.image("logo_smc.png", width=85)
+  else:
+    st.warning("⚠️ logo_smc.png introuvable dans le dossier.")
+
 with col_titre:
   st.markdown(
       "<h1 style='border-bottom: 4px solid #E30613; padding-bottom: 8px;'>Concours"
@@ -212,7 +216,7 @@ if menu == "📝 Faire mon Prono":
 
   if df_matchs.empty:
     st.info(
-        "Aucun match n'est ouvert pour l'instant. Demande à l'admin d'en créer"
+        "Aucun match n'est ouvert pour l'instant. Demande à Yoan d'en créer"
         " un !"
     )
   else:
@@ -374,20 +378,19 @@ elif menu == "🏆 Classement":
 
 
 # ---------------------------------------------------------------------------
-# 3. ESPACE ADMIN (RESTREINT À YOAN)
+# 3. ESPACE ADMIN (RESTREINT STRICTEMENT À YOAN)
 # ---------------------------------------------------------------------------
 elif menu == "⚙️ Espace Admin":
   st.header("🔐 Espace Organisateur")
 
-  # Vérification de sécurité : Seul Yoan peut accéder
-  mot_de_passe_admin = st.text_input(
-      "Entre le mot de passe administrateur (ou ton prénom exact pour"
-      " confirmer que c'est Yoan) :",
-      type="password",
+  mot_de_passe_saisi = st.text_input(
+      "Entrer le mot de passe administrateur :", type="password"
   )
 
-  if mot_de_passe_admin.strip().lower() != "yoan":
-    st.warning("🔒 Accès restreint à Yoan. Veuillez vous identifier.")
+  if mot_de_passe_saisi != MOT_DE_PASSE_ADMIN:
+    if mot_de_passe_saisi != "":
+      st.error("❌ Mot de passe incorrect.")
+    st.warning("🔒 Cet espace est réservé exclusivement à Yoan.")
   else:
     st.success("Bienvenue l'Organisateur (Yoan) !")
 
