@@ -1,7 +1,3 @@
-import base64
-from datetime import datetime
-import io
-import os
 import pandas as pd
 import streamlit as st
 
@@ -10,11 +6,6 @@ st.set_page_config(
 )
 
 MOT_DE_PASSE_ADMIN = "yoan"
-
-# CHANGEMENT DE NOM DES FICHIERS POUR ÉVITER LES VIEUX CACHES CORROMPUS
-MATCHS_FILE = "matchs_v2.csv"
-PRONOS_FILE = "pronos_v2.csv"
-BONUS_FILE = "bonus_v2.csv"
 
 PARTICIPANTS_INITIAUX = ["Nathéo", "Adri", "Allan", "Jo", "Vincent", "Tony", "Yoan"]
 EFFECTIF_SMC = [
@@ -29,73 +20,35 @@ EFFECTIF_SMC = [
     "Fahd El Khoumisti",
 ]
 
+# --- INITIALISATION DE LA MÉMOIRE (SESSION STATE) ---
+if "matchs" not in st.session_state:
+  st.session_state.matchs = pd.DataFrame(
+      columns=[
+          "ID Match",
+          "Adversaire",
+          "Date",
+          "Heure",
+          "Résultat",
+          "Score Réel",
+          "Buteurs",
+      ]
+  )
 
-def safe_read_csv(filepath, default_columns):
-  if not os.path.exists(filepath):
-    return pd.DataFrame(columns=default_columns)
-  try:
-    with open(filepath, "rb") as f:
-      content_bytes = f.read()
-    content_str = content_bytes.decode("utf-8", errors="ignore")
-    df = pd.read_csv(io.StringIO(content_str))
-  except Exception:
-    df = pd.DataFrame(columns=default_columns)
+if "pronos" not in st.session_state:
+  st.session_state.pronos = pd.DataFrame(
+      columns=[
+          "Participant",
+          "Match",
+          "Prono (1N2)",
+          "Score",
+          "Buteur",
+          "Doublé ?",
+          "Points",
+      ]
+  )
 
-  for col in default_columns:
-    if col not in df.columns:
-      df[col] = ""
-  return df
-
-
-def charger_donnees():
-  matchs_cols = [
-      "ID Match",
-      "Adversaire",
-      "Date",
-      "Heure",
-      "Résultat",
-      "Score Réel",
-      "Buteurs",
-  ]
-  pronos_cols = [
-      "Participant",
-      "Match",
-      "Prono (1N2)",
-      "Score",
-      "Buteur",
-      "Doublé ?",
-      "Points",
-  ]
-  bonus_cols = ["Participant", "Points Bonus"]
-
-  matchs = safe_read_csv(MATCHS_FILE, matchs_cols)
-  pronos = safe_read_csv(PRONOS_FILE, pronos_cols)
-  bonus = safe_read_csv(BONUS_FILE, bonus_cols)
-
-  for col in matchs_cols:
-    matchs[col] = matchs[col].fillna("").astype(str)
-  for col in pronos_cols:
-    if col != "Points":
-      pronos[col] = pronos[col].fillna("").astype(str)
-
-  pronos["Points"] = pd.to_numeric(pronos["Points"], errors="coerce").fillna(0)
-  bonus["Points Bonus"] = pd.to_numeric(
-      bonus["Points Bonus"], errors="coerce"
-  ).fillna(0)
-
-  return matchs, pronos, bonus
-
-
-def sauvegarder_donnees(matchs, pronos, bonus):
-  try:
-    matchs.to_csv(MATCHS_FILE, index=False, encoding="utf-8")
-    pronos.to_csv(PRONOS_FILE, index=False, encoding="utf-8")
-    bonus.to_csv(BONUS_FILE, index=False, encoding="utf-8")
-  except Exception:
-    pass
-
-
-df_matchs, df_pronos, df_bonus = charger_donnees()
+if "bonus" not in st.session_state:
+  st.session_state.bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
 
 # --- DESIGN & UI ---
 st.markdown("""
@@ -118,13 +71,15 @@ menu = st.sidebar.radio(
 
 def obtenir_liste_participants():
   p_pronos = (
-      df_pronos["Participant"].unique().tolist()
-      if not df_pronos.empty and "Participant" in df_pronos.columns
+      st.session_state.pronos["Participant"].unique().tolist()
+      if not st.session_state.pronos.empty
+      and "Participant" in st.session_state.pronos.columns
       else []
   )
   p_bonus = (
-      df_bonus["Participant"].unique().tolist()
-      if not df_bonus.empty and "Participant" in df_bonus.columns
+      st.session_state.bonus["Participant"].unique().tolist()
+      if not st.session_state.bonus.empty
+      and "Participant" in st.session_state.bonus.columns
       else []
   )
   tous = set(PARTICIPANTS_INITIAUX + p_pronos + p_bonus)
@@ -135,10 +90,10 @@ def obtenir_liste_participants():
 
 if menu == "?? Faire mon Prono":
   st.header("?? Enregistrer ton Pronostic")
-  if df_matchs.empty or len(df_matchs) == 0:
+  if st.session_state.matchs.empty:
     st.info("Aucun match ouvert pour l'instant.")
   else:
-    matchs_disponibles = df_matchs["ID Match"].tolist()
+    matchs_disponibles = st.session_state.matchs["ID Match"].tolist()
     choix_participant = st.selectbox(
         "Pseudo", obtenir_liste_participants() + ["? Nouveau"]
     )
@@ -167,16 +122,16 @@ if menu == "?? Faire mon Prono":
         choix_clean = prono_1n2.split()[0]
         buteurs_texte_str = ", ".join(buteurs_selectionnes)
 
-        existing_idx = df_pronos[
-            (df_pronos["Participant"] == nom_utilisateur)
-            & (df_pronos["Match"] == match_choisi)
+        existing_idx = st.session_state.pronos[
+            (st.session_state.pronos["Participant"] == nom_utilisateur)
+            & (st.session_state.pronos["Match"] == match_choisi)
         ].index
         if not existing_idx.empty:
           idx = existing_idx[0]
-          df_pronos.loc[idx, "Prono (1N2)"] = choix_clean
-          df_pronos.loc[idx, "Score"] = prono_score
-          df_pronos.loc[idx, "Buteur"] = buteurs_texte_str
-          df_pronos.loc[idx, "Doublé ?"] = annonce_double
+          st.session_state.pronos.loc[idx, "Prono (1N2)"] = choix_clean
+          st.session_state.pronos.loc[idx, "Score"] = prono_score
+          st.session_state.pronos.loc[idx, "Buteur"] = buteurs_texte_str
+          st.session_state.pronos.loc[idx, "Doublé ?"] = annonce_double
         else:
           new_row = pd.DataFrame({
               "Participant": [nom_utilisateur],
@@ -187,25 +142,28 @@ if menu == "?? Faire mon Prono":
               "Doublé ?": [annonce_double],
               "Points": [0],
           })
-          df_pronos = pd.concat([df_pronos, new_row], ignore_index=True)
+          st.session_state.pronos = pd.concat(
+              [st.session_state.pronos, new_row], ignore_index=True
+          )
 
-        sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
         st.success("Prono enregistré !")
         st.rerun()
 
-  if not df_pronos.empty:
-    st.dataframe(df_pronos, use_container_width=True)
+  if not st.session_state.pronos.empty:
+    st.dataframe(st.session_state.pronos, use_container_width=True)
 
 elif menu == "?? Classement":
   st.header("?? Classement Général")
   p_pronos_sum = (
-      df_pronos.groupby("Participant")["Points"].sum().reset_index()
-      if not df_pronos.empty
+      st.session_state.pronos.groupby("Participant")["Points"]
+      .sum()
+      .reset_index()
+      if not st.session_state.pronos.empty
       else pd.DataFrame(columns=["Participant", "Points"])
   )
-  if not p_pronos_sum.empty or not df_bonus.empty:
+  if not p_pronos_sum.empty or not st.session_state.bonus.empty:
     classement_complet = pd.merge(
-        p_pronos_sum, df_bonus, on="Participant", how="outer"
+        p_pronos_sum, st.session_state.bonus, on="Participant", how="outer"
     ).fillna(0)
     classement_complet["Points Total"] = (
         classement_complet["Points"]
@@ -234,9 +192,9 @@ elif menu == "?? Espace Admin":
       but_r = st.text_input("Buteurs réels")
       if st.form_submit_button("Enregistrer Match"):
         if id_m:
-          df_matchs = pd.concat(
+          st.session_state.matchs = pd.concat(
               [
-                  df_matchs,
+                  st.session_state.matchs,
                   pd.DataFrame({
                       "ID Match": [id_m],
                       "Adversaire": [adv],
@@ -249,9 +207,8 @@ elif menu == "?? Espace Admin":
               ],
               ignore_index=True,
           )
-          sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
           st.success("Match ajouté !")
           st.rerun()
-    st.dataframe(df_matchs, use_container_width=True)
+    st.dataframe(st.session_state.matchs, use_container_width=True)
   elif mdp != "":
     st.error("Mot de passe incorrect.")
