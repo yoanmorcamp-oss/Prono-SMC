@@ -128,7 +128,7 @@ def charger_donnees():
   # Matchs
   if os.path.exists(MATCHS_FILE):
     try:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8")
+      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8-sig")
     except Exception:
       try:
         matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
@@ -167,7 +167,7 @@ def charger_donnees():
   # Pronos
   if os.path.exists(PRONOS_FILE):
     try:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8")
+      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8-sig")
     except Exception:
       try:
         pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
@@ -205,7 +205,7 @@ def charger_donnees():
   # Bonus
   if os.path.exists(BONUS_FILE):
     try:
-      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8")
+      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8-sig")
     except Exception:
       try:
         bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
@@ -221,9 +221,9 @@ def charger_donnees():
 
 
 def sauvegarder_donnees(matchs, pronos, bonus):
-  matchs.to_csv(MATCHS_FILE, index=False, encoding="utf-8")
-  pronos.to_csv(PRONOS_FILE, index=False, encoding="utf-8")
-  bonus.to_csv(BONUS_FILE, index=False, encoding="utf-8")
+  matchs.to_csv(MATCHS_FILE, index=False, encoding="utf-8-sig")
+  pronos.to_csv(PRONOS_FILE, index=False, encoding="utf-8-sig")
+  bonus.to_csv(BONUS_FILE, index=False, encoding="utf-8-sig")
 
 
 df_matchs, df_pronos, df_bonus = charger_donnees()
