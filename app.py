@@ -125,24 +125,19 @@ EFFECTIF_SMC = [
 
 
 def charger_donnees():
-  # Matchs (Forçage direct en latin1 avec ignore pour éradiquer l'erreur)
+  # Matchs
+  matchs = None
   if os.path.exists(MATCHS_FILE):
     try:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="latin1", errors="ignore")
+      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8")
     except Exception:
-      os.remove(MATCHS_FILE)
-      matchs = pd.DataFrame(
-          columns=[
-              "ID Match",
-              "Adversaire",
-              "Date",
-              "Heure",
-              "Résultat",
-              "Score Réel",
-              "Buteurs",
-          ]
-      )
-  else:
+      try:
+        matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
+      except Exception:
+        os.remove(MATCHS_FILE)
+        matchs = None
+
+  if matchs is None:
     matchs = pd.DataFrame(
         columns=[
             "ID Match",
@@ -163,23 +158,18 @@ def charger_donnees():
     matchs["Heure"] = "20:00"
 
   # Pronos
+  pronos = None
   if os.path.exists(PRONOS_FILE):
     try:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="latin1", errors="ignore")
+      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8")
     except Exception:
-      os.remove(PRONOS_FILE)
-      pronos = pd.DataFrame(
-          columns=[
-              "Participant",
-              "Match",
-              "Prono (1N2)",
-              "Score",
-              "Buteur",
-              "Doublé ?",
-              "Points",
-          ]
-      )
-  else:
+      try:
+        pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
+      except Exception:
+        os.remove(PRONOS_FILE)
+        pronos = None
+
+  if pronos is None:
     pronos = pd.DataFrame(
         columns=[
             "Participant",
@@ -199,17 +189,23 @@ def charger_donnees():
       pronos[col] = pd.to_numeric(pronos[col], errors="coerce").fillna(0)
 
   # Bonus
+  bonus = None
   if os.path.exists(BONUS_FILE):
     try:
-      bonus = pd.read_csv(BONUS_FILE, encoding="latin1", errors="ignore")
+      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8")
     except Exception:
-      os.remove(BONUS_FILE)
-      bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
-    bonus["Points Bonus"] = pd.to_numeric(
-        bonus["Points Bonus"], errors="coerce"
-    ).fillna(0)
-  else:
+      try:
+        bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
+      except Exception:
+        os.remove(BONUS_FILE)
+        bonus = None
+
+  if bonus is None:
     bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
+
+  bonus["Points Bonus"] = pd.to_numeric(
+      bonus["Points Bonus"], errors="coerce"
+  ).fillna(0)
 
   return matchs, pronos, bonus
 
