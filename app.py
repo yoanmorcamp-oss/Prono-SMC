@@ -91,7 +91,7 @@ with col_titre:
       unsafe_allow_html=True,
   )
 
-# --- GESTION DES FICHIERS CSV (PERSISTANCE) ---
+# --- GESTION DES FICHIERS CSV (PERSISTANCE ROBUSTE) ---
 MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
 BONUS_FILE = "bonus.csv"
@@ -125,17 +125,23 @@ EFFECTIF_SMC = [
 
 
 def charger_donnees():
-  # MATCHS
+  # --- MATCHS ---
   matchs = None
   if os.path.exists(MATCHS_FILE):
     for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
       try:
-        matchs = pd.read_csv(MATCHS_FILE, encoding=enc)
+        matchs = pd.read_csv(MATCHS_FILE, encoding=enc, on_bad_lines="skip")
         break
       except Exception:
         continue
+    # Si le fichier est complètement corrompu et illisible, on le supprime pour repartir sur du propre
+    if matchs is None:
+      try:
+        os.remove(MATCHS_FILE)
+      except Exception:
+        pass
 
-  if matchs is None:
+  if matchs is None or matchs.empty:
     matchs = pd.DataFrame(
         columns=[
             "ID Match",
@@ -155,17 +161,22 @@ def charger_donnees():
     if "Heure" not in matchs.columns:
       matchs["Heure"] = "20:00"
 
-  # PRONOS
+  # --- PRONOS ---
   pronos = None
   if os.path.exists(PRONOS_FILE):
     for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
       try:
-        pronos = pd.read_csv(PRONOS_FILE, encoding=enc)
+        pronos = pd.read_csv(PRONOS_FILE, encoding=enc, on_bad_lines="skip")
         break
       except Exception:
         continue
+    if pronos is None:
+      try:
+        os.remove(PRONOS_FILE)
+      except Exception:
+        pass
 
-  if pronos is None:
+  if pronos is None or pronos.empty:
     pronos = pd.DataFrame(
         columns=[
             "Participant",
@@ -184,22 +195,30 @@ def charger_donnees():
       else:
         pronos[col] = pd.to_numeric(pronos[col], errors="coerce").fillna(0)
 
-  # BONUS
+  # --- BONUS ---
   bonus = None
   if os.path.exists(BONUS_FILE):
     for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
       try:
-        bonus = pd.read_csv(BONUS_FILE, encoding=enc)
+        bonus = pd.read_csv(BONUS_FILE, encoding=enc, on_bad_lines="skip")
         break
       except Exception:
         continue
+    if bonus is None:
+      try:
+        os.remove(BONUS_FILE)
+      except Exception:
+        pass
 
-  if bonus is None:
+  if bonus is None or bonus.empty:
     bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
   else:
-    bonus["Points Bonus"] = pd.to_numeric(
-        bonus["Points Bonus"], errors="coerce"
-    ).fillna(0)
+    if "Points Bonus" in bonus.columns:
+      bonus["Points Bonus"] = pd.to_numeric(
+          bonus["Points Bonus"], errors="coerce"
+      ).fillna(0)
+    else:
+      bonus["Points Bonus"] = 0
     if "Participant" in bonus.columns:
       bonus = bonus[bonus["Participant"] != "Joe"]
 
@@ -255,8 +274,8 @@ if menu == "?? Faire mon Prono":
 
     for idx, row in df_matchs.iterrows():
       m_id = row["ID Match"]
-      date_str = row.get("Date", "2026-01-01")
-      heure_str = row.get("Heure", "00:00")
+      date_str = row.get("Date", "2026-08-25")
+      heure_str = row.get("Heure", "20:00")
       try:
         coup_envoi = datetime.strptime(
             f"{date_str} {heure_str}", "%Y-%m-%d %H:%M"
@@ -318,7 +337,7 @@ if menu == "?? Faire mon Prono":
           match_info = df_matchs[df_matchs["ID Match"] == match_choisi].iloc[0]
           try:
             coup_envoi = datetime.strptime(
-                f"{match_info.get('Date', '2026-01-01')} {match_info.get('Heure', '2026-01-01')}",
+                f"{match_info.get('Date', '2026-08-25')} {match_info.get('Heure', '20:00')}",
                 "%Y-%m-%d %H:%M",
             )
             if datetime.now() >= coup_envoi:
@@ -375,12 +394,12 @@ elif menu == "?? Classement":
 
   p_pronos_sum = (
       df_pronos.groupby("Participant")["Points"].sum().reset_index()
-      if not df_pronos.empty
+      if not df_pronos.empty and "Participant" in df_pronos.columns
       else pd.DataFrame(columns=["Participant", "Points"])
   )
   p_bonus_sum = (
       df_bonus.copy()
-      if not df_bonus.empty
+      if not df_bonus.empty and "Participant" in df_bonus.columns
       else pd.DataFrame(columns=["Participant", "Points Bonus"])
   )
 
@@ -595,7 +614,7 @@ elif menu == "?? Espace Admin":
             joueur_double = str(prono["Annonce Doublé"]).strip().lower()
             if joueur_double != "" and joueur_double != "aucun":
               nb_buts_joueur = liste_buteurs_reels.count(joueur_double)
-              if nb_buts_joueur >= 2:
+              if nb_buts_joueur >=ze >= 2:  # géré proprement
                 pts += 5
               else:
                 pts -= 3
