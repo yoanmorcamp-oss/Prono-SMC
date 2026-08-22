@@ -99,19 +99,22 @@ def charger_donnees():
     bonus["Points Bonus"] = pd.to_numeric(
         bonus["Points Bonus"], errors="coerce"
     ).fillna(0)
+    # Nettoyage automatique de Joe s'il existe
+    if "Participant" in bonus.columns:
+      bonus = bonus[bonus["Participant"] != "Joe"]
   else:
     bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
 
   return matchs, pronos, bonus
 
 
-df_matchs, df_pronos, df_bonus = charger_donnees()
+def sauvegarder_donnees(matchs, pronos, bonus):
+  matchs.to_csv(MATCHS_FILE, index=False)
+  pronos.to_csv(PRONOS_FILE, index=False)
+  bonus.to_csv(BONUS_FILE, index=False)
 
-# --- NETTOYAGE RADICAL ANTI-JOE ---
-if not df_bonus.empty and "Participant" in df_bonus.columns:
-  if "Joe" in df_bonus["Participant"].values:
-    df_bonus = df_bonus[df_bonus["Participant"] != "Joe"]
-    df_bonus.to_csv(BONUS_FILE, index=False)
+
+df_matchs, df_pronos, df_bonus = charger_donnees()
 
 # --- MENU LATÉRAL PROPRE ---
 st.sidebar.title("Menu")
@@ -132,7 +135,6 @@ def obtenir_liste_participants():
       else []
   )
 
-  # On combine tout et on vire "Joe" s'il essaie de s'incruster
   tous = set(PARTICIPANTS_INITIAUX + p_pronos + p_bonus)
   if "Joe" in tous:
     tous.remove("Joe")
@@ -220,7 +222,7 @@ if menu == "📝 Faire mon Prono":
           match_info = df_matchs[df_matchs["ID Match"] == match_choisi].iloc[0]
           try:
             coup_envoi = datetime.strptime(
-                f"{match_info.get('Date', '2026-01-01')} {match_info.get('Heure', '00:00')}",
+                f"{match_info.get('Date', '2026-01-01')} {match_info.get('Heure', '2026-01-01')}",
                 "%Y-%m-%d %H:%M",
             )
             if datetime.now() >= coup_envoi:
