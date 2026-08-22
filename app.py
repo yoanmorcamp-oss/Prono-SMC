@@ -7,58 +7,60 @@ st.set_page_config(
     page_title="Pronos SMC - Saison 2026-2027", page_icon="⚽", layout="wide"
 )
 
-# --- DESIGN AUX COULEURS DU SM CAEN (CSS PERSONNALISÉ) ---
+# --- DESIGN AUX COULEURS DU SM CAEN (CSS FORCÉ) ---
 st.markdown("""
     <style>
-    /* Fond global */
+    /* Fond principal un peu plus texturé */
     .stApp {
-        background-color: #f8f9fa;
+        background-color: #f0f2f5;
     }
     
-    /* En-têtes aux couleurs Malherbe (Bleu & Rouge) */
+    /* Titre avec une vraie bannière colorée */
     h1 {
-        color: #002D62 !important; /* Bleu Malherbe */
-        font-family: 'Helvetica Neue', sans-serif;
-        border-bottom: 4px solid #E30613; /* Ligne rouge SMC */
-        padding-bottom: 10px;
+        color: #002D62 !important;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        border-bottom: 5px solid #E30613 !important;
+        padding-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
     h2, h3 {
         color: #002D62 !important;
     }
 
-    /* Boutons personnalisés en Rouge SMC */
-    div.stButton > button {
-        background-color: #E30613; 
-        color: white;
-        font-weight: bold;
-        border-radius: 8px;
-        border: none;
-        padding: 0.5rem 1rem;
-        transition: 0.3s;
+    /* Boutons en mode Rouge Malherbe éclatant */
+    .stButton > button {
+        background-color: #E30613 !important;
+        color: white !important;
+        font-weight: bold !important;
+        border-radius: 8px !important;
+        border: 2px solid #b5040f !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
     }
-    div.stButton > button:hover {
-        background-color: #002D62; /* Passe en bleu au survol */
-        color: white;
+    .stButton > button:hover {
+        background-color: #002D62 !important; /* Devient bleu SMC au survol */
+        border-color: #001d3f !important;
+        color: white !important;
     }
     
     /* Style de la barre latérale */
     [data-testid="stSidebar"] {
-        background-color: #f1f3f5;
+        background-color: #e9ecef;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # En-tête avec Logo officiel du SMC et Titre
-col_logo, col_titre = st.columns([1, 6])
+col_logo, col_titre = st.columns([1, 7])
 with col_logo:
-  # Logo officiel du Stade Malherbe de Caen
-  st.image(
-      "https://upload.wikimedia.org/wikipedia/fr/thumb/c/c2/Stade_Malherbe_Caen_logo_2023.svg/1200px-Stade_Malherbe_Caen_logo_2023.svg.png",
-      width=90,
-  )
+  if os.path.exists("logo_smc.png"):
+    st.image("logo_smc.png", width=85)
+  else:
+    st.write("⚽ 🔴🔵")  # Solution de repli si l'image n'est pas encore téléchargée
 with col_titre:
-  st.title("Concours de Pronos - Stade Malherbe de Caen")
+  st.title("Concours de Pronos - SMC")
 
 # --- GESTION DES FICHIERS CSV (PERSISTANCE) ---
 MATCHS_FILE = "matchs.csv"
