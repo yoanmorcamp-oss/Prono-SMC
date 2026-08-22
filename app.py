@@ -63,28 +63,32 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- EN-TÊTE AVEC LOGO (AVEC FALLBACK EN LIGNE ROBUSTE) ---
+# --- EN-TÊTE AVEC LOGO HTML ROBUSTE ---
 col_logo, col_titre = st.columns([1, 8])
 
 with col_logo:
-  # Tente de charger le logo local, sinon utilise l'URL officielle
+  # On essaie d'abord de charger le fichier local s'il existe vraiment, sinon on affiche une icône/logo HTML propre
   dossier_script = os.path.dirname(os.path.abspath(__file__))
   chemin_logo = os.path.join(dossier_script, "logo_smc.png")
 
   if os.path.exists(chemin_logo):
-    st.image(chemin_logo, width=85)
+    st.image(chemin_logo, width=80)
   elif os.path.exists("logo_smc.png"):
-    st.image("logo_smc.png", width=85)
+    st.image("logo_smc.png", width=80)
   else:
-    # URL de secours pour que l'image s'affiche dans tous les cas
-    st.image(
-        "https://upload.wikimedia.org/wikipedia/fr/thumb/f/fa/Logo_Stade_Malherbe_Caen_2024.svg/langfr-300px-Logo_Stade_Malherbe_Caen_2024.svg.png",
-        width=85,
+    # Affichage d'un blason stylisé propre en HTML si l'image locale n'est pas lue
+    st.markdown(
+        """
+        <div style="background-color: #002D62; border: 2px solid #E30613; border-radius: 10px; text-align: center; padding: 10px; width: 75px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <span style="color: white; font-weight: 900; font-size: 18px; font-family: sans-serif;">SMC</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 with col_titre:
   st.markdown(
-      "<h1 style='border-bottom: 4px solid #E30613; padding-bottom: 8px;'>Concours"
+      "<h1 style='border-bottom: 4px solid #E30613; padding-bottom: 8px; margin-top: 5px;'>Concours"
       " de Pronos - SMC</h1>",
       unsafe_allow_html=True,
   )
