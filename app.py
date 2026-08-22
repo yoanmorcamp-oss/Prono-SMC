@@ -29,18 +29,18 @@ EFFECTIF_SMC = [
 
 
 def charger_donnees():
-  # Gestion Matchs
-  matchs = None
-  if os.path.exists(MATCHS_FILE):
-    try:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8")
-    except Exception:
-      try:
-        matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
-      except Exception:
-        os.remove(MATCHS_FILE)
-        matchs = None
-  if matchs is None:
+  # Chargement Matchs ultra-sécurisé
+  try:
+    if os.path.exists(MATCHS_FILE):
+      matchs = pd.read_csv(
+          MATCHS_FILE, encoding="utf-8", encoding_errors="ignore"
+      )
+    else:
+      matchs = None
+  except Exception:
+    matchs = None
+
+  if matchs is None or not isinstance(matchs, pd.DataFrame):
     matchs = pd.DataFrame(
         columns=[
             "ID Match",
@@ -53,18 +53,18 @@ def charger_donnees():
         ]
     )
 
-  # Gestion Pronos
-  pronos = None
-  if os.path.exists(PRONOS_FILE):
-    try:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8")
-    except Exception:
-      try:
-        pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
-      except Exception:
-        os.remove(PRONOS_FILE)
-        pronos = None
-  if pronos is None:
+  # Chargement Pronos ultra-sécurisé
+  try:
+    if os.path.exists(PRONOS_FILE):
+      pronos = pd.read_csv(
+          PRONOS_FILE, encoding="utf-8", encoding_errors="ignore"
+      )
+    else:
+      pronos = None
+  except Exception:
+    pronos = None
+
+  if pronos is None or not isinstance(pronos, pd.DataFrame):
     pronos = pd.DataFrame(
         columns=[
             "Participant",
@@ -77,30 +77,38 @@ def charger_donnees():
         ]
     )
 
-  # Gestion Bonus
-  bonus = None
-  if os.path.exists(BONUS_FILE):
-    try:
-      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8")
-    except Exception:
-      try:
-        bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
-      except Exception:
-        os.remove(BONUS_FILE)
-        bonus = None
-  if bonus is None:
+  # Chargement Bonus ultra-sécurisé
+  try:
+    if os.path.exists(BONUS_FILE):
+      bonus = pd.read_csv(
+          BONUS_FILE, encoding="utf-8", encoding_errors="ignore"
+      )
+    else:
+      bonus = None
+  except Exception:
+    bonus = None
+
+  if bonus is None or not isinstance(bonus, pd.DataFrame):
     bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
 
-  # Nettoyage formats
+  # Nettoyage
   for col in matchs.columns:
     matchs[col] = matchs[col].fillna("").astype(str)
   for col in pronos.columns:
     if col != "Points":
       pronos[col] = pronos[col].fillna("").astype(str)
-  pronos["Points"] = pd.to_numeric(pronos["Points"], errors="coerce").fillna(0)
-  bonus["Points Bonus"] = pd.to_numeric(
-      bonus["Points Bonus"], errors="coerce"
-  ).fillna(0)
+
+  if "Points" in pronos.columns:
+    pronos["Points"] = pd.to_numeric(pronos["Points"], errors="coerce").fillna(0)
+  else:
+    pronos["Points"] = 0
+
+  if "Points Bonus" in bonus.columns:
+    bonus["Points Bonus"] = pd.to_numeric(
+        bonus["Points Bonus"], errors="coerce"
+    ).fillna(0)
+  else:
+    bonus["Points Bonus"] = 0
 
   return matchs, pronos, bonus
 
