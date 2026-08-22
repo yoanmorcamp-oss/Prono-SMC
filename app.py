@@ -7,22 +7,21 @@ st.set_page_config(
     page_title="Pronos SMC - Saison 2026-2027", page_icon="⚽", layout="wide"
 )
 
-# --- DESIGN STADE MALHERBE (PRO & CONTRASTÉ) ---
+# --- DESIGN STADE MALHERBE (PRO & LISIBLE) ---
 st.markdown("""
     <style>
-    /* Fond général plus sombre et moderne pour faire ressortir les blocs */
+    /* Fond général moderne */
     .stApp {
-        background-color: #eef2f7;
+        background-color: #f4f6f9;
     }
     
-    /* En-tête / Titre principal aux couleurs du SMC */
+    /* En-tête / Titre principal */
     h1 {
         color: #002D62 !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 1px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
 
     /* Sous-titres en Bleu Malherbe */
@@ -31,7 +30,7 @@ st.markdown("""
         font-weight: 700;
     }
 
-    /* Style des boutons en mode Rouge Malherbe éclatant */
+    /* Boutons en mode Rouge Malherbe éclatant */
     .stButton > button {
         background-color: #E30613 !important;
         color: white !important;
@@ -42,33 +41,30 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     .stButton > button:hover {
-        background-color: #002D62 !important; /* Devient bleu SMC au survol */
+        background-color: #002D62 !important;
         border-color: #001d3f !important;
         color: white !important;
-        box-shadow: 0 4px 8px rgba(0, 45, 98, 0.3);
     }
     
-    /* Barre latérale stylisée aux couleurs du club */
+    /* Barre latérale stylisée aux couleurs du club et textes bien visibles */
     [data-testid="stSidebar"] {
         background-color: #002D62;
     }
-    /* Textes et éléments de la sidebar en blanc pour contraster avec le fond bleu */
-    [data-testid="stSidebar"] .stRadio label, [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] span {
+    [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] label {
         color: white !important;
     }
     
-    /* Effet "Carte" moderne pour structurer les blocs */
     div.block-container {
         padding-top: 2rem;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- EN-TÊTE AVEC LOGO OFFICIEL ---
+# --- EN-TÊTE AVEC LE VRAI LOGO OFFICIEL DU SMC ---
 col_logo, col_titre = st.columns([1, 8])
 with col_logo:
   st.image(
-      "https://images.fotmob.com/image_resources/logo/teamlogo/8133.png",
+      "https://upload.wikimedia.org/wikipedia/fr/thumb/f/fa/Logo_Stade_Malherbe_Caen_2024.svg/langfr-300px-Logo_Stade_Malherbe_Caen_2024.svg.png",
       width=85,
   )
 with col_titre:
@@ -184,7 +180,7 @@ def sauvegarder_donnees(matchs, pronos, bonus):
 
 df_matchs, df_pronos, df_bonus = charger_donnees()
 
-# --- MENU LATÉRAL PROPRE ---
+# --- MENU LATÉRAL ---
 st.sidebar.title("🔴🔵 Menu SMC")
 menu = st.sidebar.radio(
     "Aller vers :", ["📝 Faire mon Prono", "🏆 Classement", "⚙️ Espace Admin"]
@@ -209,7 +205,7 @@ def obtenir_liste_participants():
 
 
 # ---------------------------------------------------------------------------
-# 1. ESPACE PARTICIPANTS
+# 1. ESPACE PARTICIPANTS (PRONOS)
 # ---------------------------------------------------------------------------
 if menu == "📝 Faire mon Prono":
   st.header("🎯 Enregistrer ton Pronostic")
@@ -338,7 +334,7 @@ if menu == "📝 Faire mon Prono":
 
 
 # ---------------------------------------------------------------------------
-# 2. CLASSEMENT
+# 2. CLASSEMENT (ACCESSIBLE À TOUS)
 # ---------------------------------------------------------------------------
 elif menu == "🏆 Classement":
   st.header("🏆 Classement Général de la Saison")
@@ -378,148 +374,166 @@ elif menu == "🏆 Classement":
 
 
 # ---------------------------------------------------------------------------
-# 3. ESPACE ADMIN
+# 3. ESPACE ADMIN (RESTREINT À YOAN)
 # ---------------------------------------------------------------------------
 elif menu == "⚙️ Espace Admin":
   st.header("🔐 Espace Organisateur")
 
-  st.subheader(
-      "1. Attribuer les points des 2 premiers matchs (Classement initial)"
+  # Vérification de sécurité : Seul Yoan peut accéder
+  mot_de_passe_admin = st.text_input(
+      "Entre le mot de passe administrateur (ou ton prénom exact pour"
+      " confirmer que c'est Yoan) :",
+      type="password",
   )
-  with st.form("form_admin_bonus"):
-    tous_participants_admin = obtenir_liste_participants()
 
-    participant_init = st.selectbox("Participant", tous_participants_admin)
-    points_initiaux = st.number_input(
-        "Points obtenus lors des 2 premiers matchs", value=0, step=1
+  if mot_de_passe_admin.strip().lower() != "yoan":
+    st.warning("🔒 Accès restreint à Yoan. Veuillez vous identifier.")
+  else:
+    st.success("Bienvenue l'Organisateur (Yoan) !")
+
+    st.subheader(
+        "1. Attribuer les points des 2 premiers matchs (Classement initial)"
     )
-    submit_bonus = st.form_submit_button("Enregistrer / Mettre à jour les points")
+    with st.form("form_admin_bonus"):
+      tous_participants_admin = obtenir_liste_participants()
 
-    if submit_bonus:
-      if participant_init.strip():
-        p_nom = participant_init.strip()
-        existing_b = df_bonus[df_bonus["Participant"] == p_nom].index
-        if not existing_b.empty:
-          df_bonus.loc[existing_b[0], "Points Bonus"] = points_initiaux
-        else:
-          new_b = pd.DataFrame(
-              {"Participant": [p_nom], "Points Bonus": [points_initiaux]}
-          )
-          df_bonus = pd.concat([df_bonus, new_b], ignore_index=True)
-
-        sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
-        st.success(
-            f"Points initiaux enregistrés pour {p_nom} : {points_initiaux} pts"
-            " !"
-        )
-        st.rerun()
-
-  if not df_bonus.empty:
-    st.subheader("Points initiaux enregistrés :")
-    st.dataframe(df_bonus, use_container_width=True)
-
-  st.markdown("---")
-  st.subheader("2. Ajouter un match du SMC")
-  with st.form("form_admin_match"):
-    id_match = st.text_input("Nom du Match (ex: SMC - Bastia)")
-    adversaire = st.text_input("Équipe adverse")
-
-    col_d1, col_d2 = st.columns(2)
-    with col_d1:
-      date_match = st.text_input("Date du match (AAAA-MM-JJ)", value="2026-08-29")
-    with col_d2:
-      heure_match = st.text_input(
-          "Heure du coup d'envoi (HH:MM)", value="20:00"
+      participant_init = st.selectbox("Participant", tous_participants_admin)
+      points_initiaux = st.number_input(
+          "Points obtenus lors des 2 premiers matchs", value=0, step=1
+      )
+      submit_bonus = st.form_submit_button(
+          "Enregistrer / Mettre à jour les points"
       )
 
-    resultat_reel = st.selectbox(
-        "Résultat Réel (À remplir après le match)", ["", "1", "N", "2"]
-    )
-    score_reel = st.text_input("Score Réel (ex: 2-1)")
-    buteurs_reels = st.text_input("Buteurs réels (ex: Botella, Hafid)")
+      if submit_bonus:
+        if participant_init.strip():
+          p_nom = participant_init.strip()
+          existing_b = df_bonus[df_bonus["Participant"] == p_nom].index
+          if not existing_b.empty:
+            df_bonus.loc[existing_b[0], "Points Bonus"] = points_initiaux
+          else:
+            new_b = pd.DataFrame(
+                {"Participant": [p_nom], "Points Bonus": [points_initiaux]}
+            )
+            df_bonus = pd.concat([df_bonus, new_b], ignore_index=True)
 
-    submit_admin_match = st.form_submit_button("Enregistrer le match")
+          sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
+          st.success(
+              f"Points initiaux enregistrés pour {p_nom} : {points_initiaux} pts"
+              " !"
+          )
+          st.rerun()
 
-    if submit_admin_match:
-      if id_match:
-        existing_m_idx = df_matchs[df_matchs["ID Match"] == id_match].index
-        if not existing_m_idx.empty:
-          idx = existing_m_idx[0]
-          df_matchs.loc[idx, "Date"] = date_match
-          df_matchs.loc[idx, "Heure"] = heure_match
-          df_matchs.loc[idx, "Résultat"] = resultat_reel
-          df_matchs.loc[idx, "Score Réel"] = score_reel
-          df_matchs.loc[idx, "Buteurs"] = buteurs_reels
-          st.success(f"Match '{id_match}' mis à jour !")
-        else:
-          new_m = pd.DataFrame({
-              "ID Match": [id_match],
-              "Adversaire": [adversaire],
-              "Date": [date_match],
-              "Heure": [heure_match],
-              "Résultat": [resultat_reel],
-              "Score Réel": [score_reel],
-              "Buteurs": [buteurs_reels],
-          })
-          df_matchs = pd.concat([df_matchs, new_m], ignore_index=True)
-          st.success(f"Match '{id_match}' créé avec succès !")
+    if not df_bonus.empty:
+      st.subheader("Points initiaux enregistrés :")
+      st.dataframe(df_bonus, use_container_width=True)
 
-        sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
-        st.rerun()
+    st.markdown("---")
+    st.subheader("2. Ajouter un match du SMC")
+    with st.form("form_admin_match"):
+      id_match = st.text_input("Nom du Match (ex: SMC - Bastia)")
+      adversaire = st.text_input("Équipe adverse")
 
-  st.subheader("Matchs configurés :")
-  st.dataframe(df_matchs, use_container_width=True)
+      col_d1, col_d2 = st.columns(2)
+      with col_d1:
+        date_match = st.text_input(
+            "Date du match (AAAA-MM-JJ)", value="2026-08-29"
+        )
+      with col_d2:
+        heure_match = st.text_input(
+            "Heure du coup d'envoi (HH:MM)", value="20:00"
+        )
 
-  st.markdown("---")
-  st.subheader("3. Calculer les points des matchs de l'appli")
-  if st.button("⚡ Lancer le calcul des points"):
-    compteur_maj = 0
-    for index, prono in df_pronos.iterrows():
-      pts = 0
-      m_id = str(prono["Match"])
-      match_correspondant = df_matchs[df_matchs["ID Match"] == m_id]
+      resultat_reel = st.selectbox(
+          "Résultat Réel (À remplir après le match)", ["", "1", "N", "2"]
+      )
+      score_reel = st.text_input("Score Réel (ex: 2-1)")
+      buteurs_reels = st.text_input("Buteurs réels (ex: Botella, Hafid)")
 
-      if not match_correspondant.empty:
-        res_reel = str(match_correspondant.iloc[0]["Résultat"]).strip()
-        sc_reel = str(match_correspondant.iloc[0]["Score Réel"]).strip()
-        buts_reel = str(match_correspondant.iloc[0]["Buteurs"]).lower()
+      submit_admin_match = st.form_submit_button("Enregistrer le match")
 
-        if res_reel != "":
-          if str(prono["Prono (1N2)"]).strip() == res_reel:
-            pts += 2
-          if str(prono["Score"]).strip() == sc_reel:
-            pts += 10
+      if submit_admin_match:
+        if id_match:
+          existing_m_idx = df_matchs[df_matchs["ID Match"] == id_match].index
+          if not existing_m_idx.empty:
+            idx = existing_m_idx[0]
+            df_matchs.loc[idx, "Date"] = date_match
+            df_matchs.loc[idx, "Heure"] = heure_match
+            df_matchs.loc[idx, "Résultat"] = resultat_reel
+            df_matchs.loc[idx, "Score Réel"] = score_reel
+            df_matchs.loc[idx, "Buteurs"] = buteurs_reels
+            st.success(f"Match '{id_match}' mis à jour !")
+          else:
+            new_m = pd.DataFrame({
+                "ID Match": [id_match],
+                "Adversaire": [adversaire],
+                "Date": [date_match],
+                "Heure": [heure_match],
+                "Résultat": [resultat_reel],
+                "Score Réel": [score_reel],
+                "Buteurs": [buteurs_reels],
+            })
+            df_matchs = pd.concat([df_matchs, new_m], ignore_index=True)
+            st.success(f"Match '{id_match}' créé avec succès !")
 
-          liste_buteurs_reels = [
-              b.strip().lower() for b in buts_reel.split(",") if b.strip() != ""
-          ]
+          sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
+          st.rerun()
 
-          buteurs_pronos_texte = str(
-              prono["Buteurs Pronostiqués"]
-          ).lower()
-          liste_buteurs_pronos = [
-              b.strip()
-              for b in buteurs_pronos_texte.split(",")
-              if b.strip() != ""
-          ]
+    st.subheader("Matchs configurés :")
+    st.dataframe(df_matchs, use_container_width=True)
 
-          for b_prono in liste_buteurs_pronos:
-            if b_prono in liste_buteurs_reels:
-              pts += 3
+    st.markdown("---")
+    st.subheader("3. Calculer les points des matchs de l'appli")
+    if st.button("⚡ Lancer le calcul des points"):
+      compteur_maj = 0
+      for index, prono in df_pronos.iterrows():
+        pts = 0
+        m_id = str(prono["Match"])
+        match_correspondant = df_matchs[df_matchs["ID Match"] == m_id]
 
-          joueur_double = str(prono["Annonce Doublé"]).strip().lower()
-          if joueur_double != "" and joueur_double != "aucun":
-            nb_buts_joueur = liste_buteurs_reels.count(joueur_double)
-            if nb_buts_joueur >= 2:
-              pts += 5
-            else:
-              pts -= 3
+        if not match_correspondant.empty:
+          res_reel = str(match_correspondant.iloc[0]["Résultat"]).strip()
+          sc_reel = str(match_correspondant.iloc[0]["Score Réel"]).strip()
+          buts_reel = str(match_correspondant.iloc[0]["Buteurs"]).lower()
 
-          df_pronos.loc[index, "Points"] = pts
-          compteur_maj += 1
+          if res_reel != "":
+            if str(prono["Prono (1N2)"]).strip() == res_reel:
+              pts += 2
+            if str(prono["Score"]).strip() == sc_reel:
+              pts += 10
 
-    sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
-    st.success(
-        f"Calcul terminé ! {compteur_maj} pronostics évalués avec succès."
-    )
-    st.rerun()
+            liste_buteurs_reels = [
+                b.strip().lower()
+                for b in buts_reel.split(",")
+                if b.strip() != ""
+            ]
+
+            buteurs_pronos_texte = str(
+                prono["Buteurs Pronostiqués"]
+            ).lower()
+            liste_buteurs_pronos = [
+                b.strip()
+                for b in buteurs_pronos_texte.split(",")
+                if b.strip() != ""
+            ]
+
+            for b_prono in liste_buteurs_pronos:
+              if b_prono in liste_buteurs_reels:
+                pts += 3
+
+            joueur_double = str(prono["Annonce Doublé"]).strip().lower()
+            if joueur_double != "" and joueur_double != "aucun":
+              nb_buts_joueur = liste_buteurs_reels.count(joueur_double)
+              if nb_buts_joueur >= 2:
+                pts += 5
+              else:
+                pts -= 3
+
+            df_pronos.loc[index, "Points"] = pts
+            compteur_maj += 1
+
+      sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
+      st.success(
+          f"Calcul terminé ! {compteur_maj} pronostics évalués avec succès."
+      )
+      st.rerun()
