@@ -63,23 +63,24 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- EN-TÊTE AVEC CHARGEMENT ULTRA-ROBUSTE DU LOGO ---
+# --- EN-TÊTE AVEC LOGO (AVEC FALLBACK EN LIGNE ROBUSTE) ---
 col_logo, col_titre = st.columns([1, 8])
 
 with col_logo:
-  # On détermine le chemin absolu du dossier où se trouve ce fichier app.py
+  # Tente de charger le logo local, sinon utilise l'URL officielle
   dossier_script = os.path.dirname(os.path.abspath(__file__))
   chemin_logo = os.path.join(dossier_script, "logo_smc.png")
 
   if os.path.exists(chemin_logo):
     st.image(chemin_logo, width=85)
+  elif os.path.exists("logo_smc.png"):
+    st.image("logo_smc.png", width=85)
   else:
-    # Solution de secours si __file__ pose un souci selon l'IDE
-    fallback_path = os.path.abspath("logo_smc.png")
-    if os.path.exists(fallback_path):
-      st.image(fallback_path, width=85)
-    else:
-      st.error(f"Logo introuvable dans : {dossier_script}")
+    # URL de secours pour que l'image s'affiche dans tous les cas
+    st.image(
+        "https://upload.wikimedia.org/wikipedia/fr/thumb/f/fa/Logo_Stade_Malherbe_Caen_2024.svg/langfr-300px-Logo_Stade_Malherbe_Caen_2024.svg.png",
+        width=85,
+    )
 
 with col_titre:
   st.markdown(
