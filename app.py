@@ -1,4 +1,4 @@
-base64
+import base64
 from datetime import datetime
 import os
 import pandas as pd
@@ -65,7 +65,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- FONCTION CHARGEMENT LOGO EN BASE64 (ULTRA FIABLE) ---
+# --- FONCTION CHARGEMENT LOGO EN BASE64 ---
 def afficher_logo_ou_badge():
   dossier_script = os.path.dirname(os.path.abspath(__file__))
   chemins_possibles = [
@@ -93,7 +93,7 @@ def afficher_logo_ou_badge():
     except Exception:
       pass
 
-  # Fallback si le fichier n'est pas trouvé ou illisible
+  # Fallback si le fichier n'est pas trouvé
   st.markdown(
       """
         <div style="background-color: #002D62; border: 2px solid #E30613; border-radius: 10px; text-align: center; padding: 10px; width: 75px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
