@@ -7,67 +7,83 @@ st.set_page_config(
     page_title="Pronos SMC - Saison 2026-2027", page_icon="⚽", layout="wide"
 )
 
-# --- DESIGN AUX COULEURS DU SM CAEN (CSS FORCÉ) ---
+# --- DESIGN STADE MALHERBE (PRO & CONTRASTÉ) ---
 st.markdown("""
     <style>
-    /* Fond principal un peu plus texturé */
+    /* Fond général plus sombre et moderne pour faire ressortir les blocs */
     .stApp {
-        background-color: #f0f2f5;
+        background-color: #eef2f7;
     }
     
-    /* Titre avec une vraie bannière colorée */
+    /* En-tête / Titre principal aux couleurs du SMC */
     h1 {
         color: #002D62 !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        border-bottom: 5px solid #E30613 !important;
-        padding-bottom: 12px;
+        font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 1px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
 
+    /* Sous-titres en Bleu Malherbe */
     h2, h3 {
         color: #002D62 !important;
+        font-weight: 700;
     }
 
-    /* Boutons en mode Rouge Malherbe éclatant */
+    /* Style des boutons en mode Rouge Malherbe éclatant */
     .stButton > button {
         background-color: #E30613 !important;
         color: white !important;
         font-weight: bold !important;
         border-radius: 8px !important;
         border: 2px solid #b5040f !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(227, 6, 19, 0.2);
         transition: all 0.3s ease;
     }
     .stButton > button:hover {
         background-color: #002D62 !important; /* Devient bleu SMC au survol */
         border-color: #001d3f !important;
         color: white !important;
+        box-shadow: 0 4px 8px rgba(0, 45, 98, 0.3);
     }
     
-    /* Style de la barre latérale */
+    /* Barre latérale stylisée aux couleurs du club */
     [data-testid="stSidebar"] {
-        background-color: #e9ecef;
+        background-color: #002D62;
+    }
+    /* Textes et éléments de la sidebar en blanc pour contraster avec le fond bleu */
+    [data-testid="stSidebar"] .stRadio label, [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] span {
+        color: white !important;
+    }
+    
+    /* Effet "Carte" moderne pour structurer les blocs */
+    div.block-container {
+        padding-top: 2rem;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# En-tête avec Logo officiel du SMC et Titre
-col_logo, col_titre = st.columns([1, 7])
+# --- EN-TÊTE AVEC LOGO OFFICIEL ---
+col_logo, col_titre = st.columns([1, 8])
 with col_logo:
-  if os.path.exists("logo_smc.png"):
-    st.image("logo_smc.png", width=85)
-  else:
-    st.write("⚽ 🔴🔵")  # Solution de repli si l'image n'est pas encore téléchargée
+  st.image(
+      "https://images.fotmob.com/image_resources/logo/teamlogo/8133.png",
+      width=85,
+  )
 with col_titre:
-  st.title("Concours de Pronos - SMC")
+  st.markdown(
+      "<h1 style='border-bottom: 4px solid #E30613; padding-bottom: 8px;'>Concours"
+      " de Pronos - SMC</h1>",
+      unsafe_allow_html=True,
+  )
 
 # --- GESTION DES FICHIERS CSV (PERSISTANCE) ---
 MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
 BONUS_FILE = "bonus.csv"
 
-# Liste officielle de vos participants (avec "Jo")
+# Liste officielle de vos participants
 PARTICIPANTS_INITIAUX = [
     "Nathéo",
     "Adri",
@@ -152,7 +168,6 @@ def charger_donnees():
     bonus["Points Bonus"] = pd.to_numeric(
         bonus["Points Bonus"], errors="coerce"
     ).fillna(0)
-    # Nettoyage automatique de Joe s'il existe
     if "Participant" in bonus.columns:
       bonus = bonus[bonus["Participant"] != "Joe"]
   else:
@@ -187,11 +202,9 @@ def obtenir_liste_participants():
       if not df_bonus.empty and "Participant" in df_bonus.columns
       else []
   )
-
   tous = set(PARTICIPANTS_INITIAUX + p_pronos + p_bonus)
   if "Joe" in tous:
     tous.remove("Joe")
-
   return sorted(list(tous))
 
 
@@ -472,10 +485,8 @@ elif menu == "⚙️ Espace Admin":
         buts_reel = str(match_correspondant.iloc[0]["Buteurs"]).lower()
 
         if res_reel != "":
-          # 1N2
           if str(prono["Prono (1N2)"]).strip() == res_reel:
             pts += 2
-          # Score exact
           if str(prono["Score"]).strip() == sc_reel:
             pts += 10
 
@@ -496,7 +507,6 @@ elif menu == "⚙️ Espace Admin":
             if b_prono in liste_buteurs_reels:
               pts += 3
 
-          # Gestion du doublé annoncé
           joueur_double = str(prono["Annonce Doublé"]).strip().lower()
           if joueur_double != "" and joueur_double != "aucun":
             nb_buts_joueur = liste_buteurs_reels.count(joueur_double)
