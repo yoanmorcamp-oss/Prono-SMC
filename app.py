@@ -9,17 +9,14 @@ st.set_page_config(
 )
 
 # --- MOT DE PASSE ADMIN ---
-MOT_DE_PASSE_ADMIN = "yoan"  # Modifie-le ici si besoin
+MOT_DE_PASSE_ADMIN = "yoan"
 
 # --- DESIGN STADE MALHERBE (PRO & LISIBLE) ---
 st.markdown("""
     <style>
-    /* Fond général moderne */
     .stApp {
         background-color: #f4f6f9;
     }
-    
-    /* En-tête / Titre principal */
     h1 {
         color: #002D62 !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -27,14 +24,10 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-
-    /* Sous-titres en Bleu Malherbe */
     h2, h3 {
         color: #002D62 !important;
         font-weight: 700;
     }
-
-    /* Boutons en mode Rouge Malherbe éclatant */
     .stButton > button {
         background-color: #E30613 !important;
         color: white !important;
@@ -49,15 +42,12 @@ st.markdown("""
         border-color: #001d3f !important;
         color: white !important;
     }
-    
-    /* Barre latérale stylisée aux couleurs du club et textes bien visibles */
     [data-testid="stSidebar"] {
         background-color: #002D62;
     }
     [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] label {
         color: white !important;
     }
-    
     div.block-container {
         padding-top: 2rem;
     }
@@ -65,11 +55,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- FONCTION CHARGEMENT LOGO EN BASE64 ---
+# --- FONCTION CHARGEMENT LOGO EN BASE64 (.JPG OU .PNG) ---
 def afficher_logo_ou_badge():
   dossier_script = os.path.dirname(os.path.abspath(__file__))
   chemins_possibles = [
+      os.path.join(dossier_script, "logo_smc.jpg"),
+      os.path.join(dossier_script, "logo_smc.JPG"),
       os.path.join(dossier_script, "logo_smc.png"),
+      "logo_smc.jpg",
       "logo_smc.png",
   ]
 
@@ -81,11 +74,13 @@ def afficher_logo_ou_badge():
 
   if img_path:
     try:
+      # Détection du type mime (jpg ou png)
+      mime = "image/jpeg" if img_path.lower().endswith(".jpg") else "image/png"
       with open(img_path, "rb") as f:
         data = f.read()
       encoded = base64.b64encode(data).decode()
       st.markdown(
-          f'<img src="data:image/png;base64,{encoded}" width="75"'
+          f'<img src="data:{mime};base64,{encoded}" width="65"'
           ' style="border-radius: 8px; margin-top: 5px;" />',
           unsafe_allow_html=True,
       )
@@ -93,10 +88,10 @@ def afficher_logo_ou_badge():
     except Exception:
       pass
 
-  # Fallback si le fichier n'est pas trouvé
+  # Fallback si introuvable
   st.markdown(
       """
-        <div style="background-color: #002D62; border: 2px solid #E30613; border-radius: 10px; text-align: center; padding: 10px; width: 75px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div style="background-color: #002D62; border: 2px solid #E30613; border-radius: 10px; text-align: center; padding: 10px; width: 65px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <span style="color: white; font-weight: 900; font-size: 18px; font-family: sans-serif;">SMC</span>
         </div>
         """,
@@ -122,18 +117,8 @@ MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
 BONUS_FILE = "bonus.csv"
 
-# Liste officielle de vos participants
-PARTICIPANTS_INITIAUX = [
-    "Nathéo",
-    "Adri",
-    "Allan",
-    "Jo",
-    "Vincent",
-    "Tony",
-    "Yoan",
-]
+PARTICIPANTS_INITIAUX = ["Nathéo", "Adri", "Allan", "Jo", "Vincent", "Tony", "Yoan"]
 
-# Effectif officiel actualisé du SMC
 EFFECTIF_SMC = [
     "Anthony Mandréa",
     "Yannis Clémentia",
@@ -377,7 +362,7 @@ if menu == "📝 Faire mon Prono":
 
 
 # ---------------------------------------------------------------------------
-# 2. CLASSEMENT (ACCESSIBLE À TOUS)
+# 2. CLASSEMENT
 # ---------------------------------------------------------------------------
 elif menu == "🏆 Classement":
   st.header("🏆 Classement Général de la Saison")
@@ -417,7 +402,7 @@ elif menu == "🏆 Classement":
 
 
 # ---------------------------------------------------------------------------
-# 3. ESPACE ADMIN (RESTREINT STRICTEMENT À YOAN)
+# 3. ESPACE ADMIN
 # ---------------------------------------------------------------------------
 elif menu == "⚙️ Espace Admin":
   st.header("🔐 Espace Organisateur")
