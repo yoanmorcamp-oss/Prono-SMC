@@ -365,10 +365,47 @@ elif menu == "🏆 Classement":
     )
     classement_final.index += 1
 
-    st.table(classement_final)
+    st.markdown("""
+        <style>
+        .classement-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            color: #002D62;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .classement-table th {
+            background-color: #002D62;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .classement-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-weight: 600;
+        }
+        .classement-table tr:nth-child(even) {
+            background-color: #f9fbfd;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    html_table = "<table class='classement-table'><tr><th>Rang</th><th>Participant</th><th>Points Total</th></tr>"
+    for idx, row in classement_final.iterrows():
+      html_table += f"<tr><td>{idx}</td><td>{row['Participant']}</td><td>{row['Points Total']}</td></tr>"
+    html_table += "</table>"
+
+    st.markdown(html_table, unsafe_allow_html=True)
 
     st.subheader("📋 Historique complet des pronos et points")
-    st.dataframe(df_pronos, use_container_width=True)
+    if not df_pronos.empty:
+      st.dataframe(df_pronos, use_container_width=True)
+    else:
+      st.info("Aucun historique pour le moment.")
   else:
     st.info("Le classement est vide pour l'instant.")
 
