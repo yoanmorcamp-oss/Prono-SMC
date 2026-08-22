@@ -7,7 +7,58 @@ st.set_page_config(
     page_title="Pronos SMC - Saison 2026-2027", page_icon="⚽", layout="wide"
 )
 
-st.title("⚽ Concours de Pronos - Stade Malherbe de Caen")
+# --- DESIGN AUX COULEURS DU SM CAEN (CSS PERSONNALISÉ) ---
+st.markdown("""
+    <style>
+    /* Fond global */
+    .stApp {
+        background-color: #f8f9fa;
+    }
+    
+    /* En-têtes aux couleurs Malherbe (Bleu & Rouge) */
+    h1 {
+        color: #002D62 !important; /* Bleu Malherbe */
+        font-family: 'Helvetica Neue', sans-serif;
+        border-bottom: 4px solid #E30613; /* Ligne rouge SMC */
+        padding-bottom: 10px;
+    }
+
+    h2, h3 {
+        color: #002D62 !important;
+    }
+
+    /* Boutons personnalisés en Rouge SMC */
+    div.stButton > button {
+        background-color: #E30613; 
+        color: white;
+        font-weight: bold;
+        border-radius: 8px;
+        border: none;
+        padding: 0.5rem 1rem;
+        transition: 0.3s;
+    }
+    div.stButton > button:hover {
+        background-color: #002D62; /* Passe en bleu au survol */
+        color: white;
+    }
+    
+    /* Style de la barre latérale */
+    [data-testid="stSidebar"] {
+        background-color: #f1f3f5;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# En-tête avec Logo officiel du SMC et Titre
+col_logo, col_titre = st.columns([1, 6])
+with col_logo:
+  # Logo officiel du Stade Malherbe de Caen
+  st.image(
+      "https://upload.wikimedia.org/wikipedia/fr/thumb/c/c2/Stade_Malherbe_Caen_logo_2023.svg/1200px-Stade_Malherbe_Caen_logo_2023.svg.png",
+      width=90,
+  )
+with col_titre:
+  st.title("Concours de Pronos - Stade Malherbe de Caen")
 
 # --- GESTION DES FICHIERS CSV (PERSISTANCE) ---
 MATCHS_FILE = "matchs.csv"
@@ -117,7 +168,7 @@ def sauvegarder_donnees(matchs, pronos, bonus):
 df_matchs, df_pronos, df_bonus = charger_donnees()
 
 # --- MENU LATÉRAL PROPRE ---
-st.sidebar.title("Menu")
+st.sidebar.title("🔴🔵 Menu SMC")
 menu = st.sidebar.radio(
     "Aller vers :", ["📝 Faire mon Prono", "🏆 Classement", "⚙️ Espace Admin"]
 )
