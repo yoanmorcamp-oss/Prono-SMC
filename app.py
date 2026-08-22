@@ -125,26 +125,23 @@ EFFECTIF_SMC = [
 
 
 def charger_donnees():
-  # Matchs
+  # Matchs (Forçage direct en latin1 avec ignore pour éradiquer l'erreur)
   if os.path.exists(MATCHS_FILE):
     try:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8")
+      matchs = pd.read_csv(MATCHS_FILE, encoding="latin1", errors="ignore")
     except Exception:
-      try:
-        matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
-      except Exception:
-        os.remove(MATCHS_FILE)
-        matchs = pd.DataFrame(
-            columns=[
-                "ID Match",
-                "Adversaire",
-                "Date",
-                "Heure",
-                "Résultat",
-                "Score Réel",
-                "Buteurs",
-            ]
-        )
+      os.remove(MATCHS_FILE)
+      matchs = pd.DataFrame(
+          columns=[
+              "ID Match",
+              "Adversaire",
+              "Date",
+              "Heure",
+              "Résultat",
+              "Score Réel",
+              "Buteurs",
+          ]
+      )
   else:
     matchs = pd.DataFrame(
         columns=[
@@ -168,23 +165,20 @@ def charger_donnees():
   # Pronos
   if os.path.exists(PRONOS_FILE):
     try:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8")
+      pronos = pd.read_csv(PRONOS_FILE, encoding="latin1", errors="ignore")
     except Exception:
-      try:
-        pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
-      except Exception:
-        os.remove(PRONOS_FILE)
-        pronos = pd.DataFrame(
-            columns=[
-                "Participant",
-                "Match",
-                "Prono (1N2)",
-                "Score",
-                "Buteur",
-                "Doublé ?",
-                "Points",
-            ]
-        )
+      os.remove(PRONOS_FILE)
+      pronos = pd.DataFrame(
+          columns=[
+              "Participant",
+              "Match",
+              "Prono (1N2)",
+              "Score",
+              "Buteur",
+              "Doublé ?",
+              "Points",
+          ]
+      )
   else:
     pronos = pd.DataFrame(
         columns=[
@@ -207,13 +201,10 @@ def charger_donnees():
   # Bonus
   if os.path.exists(BONUS_FILE):
     try:
-      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8")
+      bonus = pd.read_csv(BONUS_FILE, encoding="latin1", errors="ignore")
     except Exception:
-      try:
-        bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
-      except Exception:
-        os.remove(BONUS_FILE)
-        bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
+      os.remove(BONUS_FILE)
+      bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
     bonus["Points Bonus"] = pd.to_numeric(
         bonus["Points Bonus"], errors="coerce"
     ).fillna(0)
