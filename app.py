@@ -1,3 +1,4 @@
+base64
 from datetime import datetime
 import os
 import pandas as pd
@@ -63,28 +64,51 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- EN-TÊTE AVEC LOGO HTML ROBUSTE ---
-col_logo, col_titre = st.columns([1, 8])
 
-with col_logo:
-  # On essaie d'abord de charger le fichier local s'il existe vraiment, sinon on affiche une icône/logo HTML propre
+# --- FONCTION CHARGEMENT LOGO EN BASE64 (ULTRA FIABLE) ---
+def afficher_logo_ou_badge():
   dossier_script = os.path.dirname(os.path.abspath(__file__))
-  chemin_logo = os.path.join(dossier_script, "logo_smc.png")
+  chemins_possibles = [
+      os.path.join(dossier_script, "logo_smc.png"),
+      "logo_smc.png",
+  ]
 
-  if os.path.exists(chemin_logo):
-    st.image(chemin_logo, width=80)
-  elif os.path.exists("logo_smc.png"):
-    st.image("logo_smc.png", width=80)
-  else:
-    # Affichage d'un blason stylisé propre en HTML si l'image locale n'est pas lue
-    st.markdown(
-        """
+  img_path = None
+  for p in chemins_possibles:
+    if os.path.exists(p):
+      img_path = p
+      break
+
+  if img_path:
+    try:
+      with open(img_path, "rb") as f:
+        data = f.read()
+      encoded = base64.b64encode(data).decode()
+      st.markdown(
+          f'<img src="data:image/png;base64,{encoded}" width="75"'
+          ' style="border-radius: 8px; margin-top: 5px;" />',
+          unsafe_allow_html=True,
+      )
+      return
+    except Exception:
+      pass
+
+  # Fallback si le fichier n'est pas trouvé ou illisible
+  st.markdown(
+      """
         <div style="background-color: #002D62; border: 2px solid #E30613; border-radius: 10px; text-align: center; padding: 10px; width: 75px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <span style="color: white; font-weight: 900; font-size: 18px; font-family: sans-serif;">SMC</span>
         </div>
         """,
-        unsafe_allow_html=True,
-    )
+      unsafe_allow_html=True,
+  )
+
+
+# --- EN-TÊTE ---
+col_logo, col_titre = st.columns([1, 8])
+
+with col_logo:
+  afficher_logo_ou_badge()
 
 with col_titre:
   st.markdown(
