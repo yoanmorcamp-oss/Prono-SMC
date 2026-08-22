@@ -1,4 +1,3 @@
-import base64
 from datetime import datetime
 import os
 import pandas as pd
@@ -11,12 +10,10 @@ st.set_page_config(
 # --- MOT DE PASSE ADMIN ---
 MOT_DE_PASSE_ADMIN = "yoan"
 
-# --- DESIGN STADE MALHERBE (PRO & LISIBLE) ---
+# --- DESIGN STADE MALHERBE ---
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #f4f6f9;
-    }
+    .stApp { background-color: #f4f6f9; }
     h1 {
         color: #002D62 !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -24,10 +21,7 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    h2, h3 {
-        color: #002D62 !important;
-        font-weight: 700;
-    }
+    h2, h3 { color: #002D62 !important; font-weight: 700; }
     .stButton > button {
         background-color: #E30613 !important;
         color: white !important;
@@ -35,80 +29,32 @@ st.markdown("""
         border-radius: 8px !important;
         border: 2px solid #b5040f !important;
         box-shadow: 0 4px 6px rgba(227, 6, 19, 0.2);
-        transition: all 0.3s ease;
     }
     .stButton > button:hover {
         background-color: #002D62 !important;
-        border-color: #001d3f !important;
         color: white !important;
     }
-    [data-testid="stSidebar"] {
-        background-color: #002D62;
-    }
+    [data-testid="stSidebar"] { background-color: #002D62; }
     [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] label {
         color: white !important;
     }
-    div.block-container {
-        padding-top: 2rem;
-    }
+    div.block-container { padding-top: 2rem; }
     </style>
 """, unsafe_allow_html=True)
 
-
-# --- FONCTION CHARGEMENT LOGO EN BASE64 (.JPG OU .PNG) ---
-def afficher_logo_ou_badge():
-  dossier_script = os.path.dirname(os.path.abspath(__file__))
-  chemins_possibles = [
-      os.path.join(dossier_script, "logo_smc.jpg"),
-      os.path.join(dossier_script, "logo_smc.JPG"),
-      os.path.join(dossier_script, "logo_smc.png"),
-      "logo_smc.jpg",
-      "logo_smc.png",
-  ]
-
-  img_path = None
-  for p in chemins_possibles:
-    if os.path.exists(p):
-      img_path = p
-      break
-
-  if img_path:
-    try:
-      # Détection du type mime (jpg ou png)
-      mime = "image/jpeg" if img_path.lower().endswith(".jpg") else "image/png"
-      with open(img_path, "rb") as f:
-        data = f.read()
-      encoded = base64.b64encode(data).decode()
-      st.markdown(
-          f'<img src="data:{mime};base64,{encoded}" width="65"'
-          ' style="border-radius: 8px; margin-top: 5px;" />',
-          unsafe_allow_html=True,
-      )
-      return
-    except Exception:
-      pass
-
-  # Fallback si introuvable
-  st.markdown(
-      """
-        <div style="background-color: #002D62; border: 2px solid #E30613; border-radius: 10px; text-align: center; padding: 10px; width: 65px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <span style="color: white; font-weight: 900; font-size: 18px; font-family: sans-serif;">SMC</span>
-        </div>
-        """,
-      unsafe_allow_html=True,
-  )
-
-
-# --- EN-TÊTE ---
+# --- EN-TÊTE AVEC LOGO ---
 col_logo, col_titre = st.columns([1, 8])
 
 with col_logo:
-  afficher_logo_ou_badge()
+  # Remplace l'URL ci-dessous par le lien "Raw" de ton image sur GitHub si besoin,
+  # ou laisse ce lien direct vers le blason officiel du SMC :
+  url_logo = "https://github.com/yoanmorcamp-oss/Prono-SMC/blob/main/logo_smc.png"
+  st.image(url_logo, width=65)
 
 with col_titre:
   st.markdown(
-      "<h1 style='border-bottom: 4px solid #E30613; padding-bottom: 8px; margin-top: 5px;'>Concours"
-      " de Pronos - SMC</h1>",
+      "<h1 style='border-bottom: 4px solid #E30613; padding-bottom: 8px;"
+      " margin-top: 5px;'>Concours de Pronos - SMC</h1>",
       unsafe_allow_html=True,
   )
 
