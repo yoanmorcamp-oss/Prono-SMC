@@ -125,25 +125,22 @@ EFFECTIF_SMC = [
 
 
 def charger_donnees():
-  # Matchs
+  # Matchs (Utilisation de latin1 pour éviter tout plantage d'encodage)
   if os.path.exists(MATCHS_FILE):
     try:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8-sig")
+      matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
     except Exception:
-      try:
-        matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
-      except Exception:
-        matchs = pd.DataFrame(
-            columns=[
-                "ID Match",
-                "Adversaire",
-                "Date",
-                "Heure",
-                "Résultat",
-                "Score Réel",
-                "Buteurs",
-            ]
-        )
+      matchs = pd.DataFrame(
+          columns=[
+              "ID Match",
+              "Adversaire",
+              "Date",
+              "Heure",
+              "Résultat",
+              "Score Réel",
+              "Buteurs",
+          ]
+      )
   else:
     matchs = pd.DataFrame(
         columns=[
@@ -167,22 +164,19 @@ def charger_donnees():
   # Pronos
   if os.path.exists(PRONOS_FILE):
     try:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8-sig")
+      pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
     except Exception:
-      try:
-        pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
-      except Exception:
-        pronos = pd.DataFrame(
-            columns=[
-                "Participant",
-                "Match",
-                "Prono (1N2)",
-                "Score",
-                "Buteur",
-                "Doublé ?",
-                "Points",
-            ]
-        )
+      pronos = pd.DataFrame(
+          columns=[
+              "Participant",
+              "Match",
+              "Prono (1N2)",
+              "Score",
+              "Buteur",
+              "Doublé ?",
+              "Points",
+          ]
+      )
   else:
     pronos = pd.DataFrame(
         columns=[
@@ -205,12 +199,9 @@ def charger_donnees():
   # Bonus
   if os.path.exists(BONUS_FILE):
     try:
-      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8-sig")
+      bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
     except Exception:
-      try:
-        bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
-      except Exception:
-        bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
+      bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
     bonus["Points Bonus"] = pd.to_numeric(
         bonus["Points Bonus"], errors="coerce"
     ).fillna(0)
@@ -221,9 +212,9 @@ def charger_donnees():
 
 
 def sauvegarder_donnees(matchs, pronos, bonus):
-  matchs.to_csv(MATCHS_FILE, index=False, encoding="utf-8-sig")
-  pronos.to_csv(PRONOS_FILE, index=False, encoding="utf-8-sig")
-  bonus.to_csv(BONUS_FILE, index=False, encoding="utf-8-sig")
+  matchs.to_csv(MATCHS_FILE, index=False, encoding="utf-8")
+  pronos.to_csv(PRONOS_FILE, index=False, encoding="utf-8")
+  bonus.to_csv(BONUS_FILE, index=False, encoding="utf-8")
 
 
 df_matchs, df_pronos, df_bonus = charger_donnees()
