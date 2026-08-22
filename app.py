@@ -123,14 +123,21 @@ menu = st.sidebar.radio(
 def obtenir_liste_participants():
   p_pronos = (
       df_pronos["Participant"].unique().tolist()
-      if not df_pronos.empty
+      if not df_pronos.empty and "Participant" in df_pronos.columns
       else []
   )
   p_bonus = (
-      df_bonus["Participant"].unique().tolist() if not df_bonus.empty else []
+      df_bonus["Participant"].unique().tolist()
+      if not df_bonus.empty and "Participant" in df_bonus.columns
+      else []
   )
-  tous = sorted(list(set(PARTICIPANTS_INITIAUX + p_pronos + p_bonus)))
-  return tous
+
+  # On combine tout et on vire "Joe" s'il essaie de s'incruster
+  tous = set(PARTICIPANTS_INITIAUX + p_pronos + p_bonus)
+  if "Joe" in tous:
+    tous.remove("Joe")
+
+  return sorted(list(tous))
 
 
 # ---------------------------------------------------------------------------
