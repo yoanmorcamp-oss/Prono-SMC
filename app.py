@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime
+import io
 import os
 import pandas as pd
 import streamlit as st
@@ -28,95 +29,70 @@ EFFECTIF_SMC = [
 ]
 
 
+def safe_read_csv(filepath, default_columns):
+  if not os.path.exists(filepath):
+    return pd.DataFrame(columns=default_columns)
+  try:
+    with open(filepath, "rb") as f:
+      content_bytes = f.read()
+    # Décodage binaire tolérant : supprime ou ignore tout caractère invalide
+    content_str = content_bytes.decode("utf-8", errors="ignore")
+    df = pd.read_csv(io.StringIO(content_str))
+  except Exception:
+    df = pd.DataFrame(columns=default_columns)
+
+  for col in default_columns:
+    if col not in df.columns:
+      df[col] = ""
+  return df
+
+
 def charger_donnees():
-  # Chargement Matchs ultra-sécurisé
-  try:
-    if os.path.exists(MATCHS_FILE):
-      matchs = pd.read_csv(
-          MATCHS_FILE, encoding="utf-8", encoding_errors="ignore"
-      )
-    else:
-      matchs = None
-  except Exception:
-    matchs = None
+  matchs_cols = [
+      "ID Match",
+      "Adversaire",
+      "Date",
+      "Heure",
+      "Résultat",
+      "Score Réel",
+      "Buteurs",
+  ]
+  pronos_cols = [
+      "Participant",
+      "Match",
+      "Prono (1N2)",
+      "Score",
+      "Buteur",
+      "Doublé ?",
+      "Points",
+  ]
+  bonus_cols = ["Participant", "Points Bonus"]
 
-  if matchs is None or not isinstance(matchs, pd.DataFrame):
-    matchs = pd.DataFrame(
-        columns=[
-            "ID Match",
-            "Adversaire",
-            "Date",
-            "Heure",
-            "Résultat",
-            "Score Réel",
-            "Buteurs",
-        ]
-    )
+  matchs = safe_read_csv(MATCHS_FILE, matchs_cols)
+  pronos = safe_read_csv(PRONOS_FILE, pronos_cols)
+  bonus = safe_read_csv(BONUS_FILE, bonus_cols)
 
-  # Chargement Pronos ultra-sécurisé
-  try:
-    if os.path.exists(PRONOS_FILE):
-      pronos = pd.read_csv(
-          PRONOS_FILE, encoding="utf-8", encoding_errors="ignore"
-      )
-    else:
-      pronos = None
-  except Exception:
-    pronos = None
-
-  if pronos is None or not isinstance(pronos, pd.DataFrame):
-    pronos = pd.DataFrame(
-        columns=[
-            "Participant",
-            "Match",
-            "Prono (1N2)",
-            "Score",
-            "Buteur",
-            "Doublé ?",
-            "Points",
-        ]
-    )
-
-  # Chargement Bonus ultra-sécurisé
-  try:
-    if os.path.exists(BONUS_FILE):
-      bonus = pd.read_csv(
-          BONUS_FILE, encoding="utf-8", encoding_errors="ignore"
-      )
-    else:
-      bonus = None
-  except Exception:
-    bonus = None
-
-  if bonus is None or not isinstance(bonus, pd.DataFrame):
-    bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
-
-  # Nettoyage
-  for col in matchs.columns:
+  for col in matchs_cols:
     matchs[col] = matchs[col].fillna("").astype(str)
-  for col in pronos.columns:
+  for col in pronos_cols:
     if col != "Points":
       pronos[col] = pronos[col].fillna("").astype(str)
 
-  if "Points" in pronos.columns:
-    pronos["Points"] = pd.to_numeric(pronos["Points"], errors="coerce").fillna(0)
-  else:
-    pronos["Points"] = 0
-
-  if "Points Bonus" in bonus.columns:
-    bonus["Points Bonus"] = pd.to_numeric(
-        bonus["Points Bonus"], errors="coerce"
-    ).fillna(0)
-  else:
-    bonus["Points Bonus"] = 0
+  pronos["Points"] = pd.to_numeric(pronos["Points"], errors="coerce").fillna(0)
+  bonus["Points Bonus"] = pd.to_numeric(
+      bonus["Points Bonus"], errors="coerce"
+  ).fillna(0)
 
   return matchs, pronos, bonus
 
 
 def sauvegarder_donnees(matchs, pronos, bonus):
-  matchs.to_csv(MATCHS_FILE, index=False, encoding="utf-8")
-  pronos.to_csv(PRONOS_FILE, index=False, encoding="utf-8")
-  bonus.to_csv(BONUS_FILE, index=False, encoding="utf-8")
+  try:
+    matchs.to_csv(MATCHS_FILE, index=False, encoding="utf-8")
+    pronos.to_csv(PRONOS_FILE, index=False, encoding="utf-8")
+    bonus.to_csv(BONUS_FILE, index=False, encoding="utf-8")
+  except Exception:
+    pass
 
 
 df_matchs, df_pronos, df_bonus = charger_donnees()
@@ -159,7 +135,7 @@ def obtenir_liste_participants():
 
 if menu == "?? Faire mon Prono":
   st.header("?? Enregistrer ton Pronostic")
-  if df_matchs.empty:
+  if df_matchs.empty or len(df_matchs) == 0:
     st.info("Aucun match ouvert pour l'instant.")
   else:
     matchs_disponibles = df_matchs["ID Match"].tolist()
