@@ -11,9 +11,10 @@ st.set_page_config(
 
 MOT_DE_PASSE_ADMIN = "yoan"
 
-MATCHS_FILE = "matchs.csv"
-PRONOS_FILE = "pronos.csv"
-BONUS_FILE = "bonus.csv"
+# CHANGEMENT DE NOM DES FICHIERS POUR ÉVITER LES VIEUX CACHES CORROMPUS
+MATCHS_FILE = "matchs_v2.csv"
+PRONOS_FILE = "pronos_v2.csv"
+BONUS_FILE = "bonus_v2.csv"
 
 PARTICIPANTS_INITIAUX = ["Nathéo", "Adri", "Allan", "Jo", "Vincent", "Tony", "Yoan"]
 EFFECTIF_SMC = [
@@ -35,7 +36,6 @@ def safe_read_csv(filepath, default_columns):
   try:
     with open(filepath, "rb") as f:
       content_bytes = f.read()
-    # Décodage binaire tolérant : supprime ou ignore tout caractère invalide
     content_str = content_bytes.decode("utf-8", errors="ignore")
     df = pd.read_csv(io.StringIO(content_str))
   except Exception:
