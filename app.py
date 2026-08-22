@@ -130,7 +130,20 @@ def charger_donnees():
     try:
       matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8")
     except Exception:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="latin1", errors="ignore")
+      try:
+        matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
+      except Exception:
+        matchs = pd.DataFrame(
+            columns=[
+                "ID Match",
+                "Adversaire",
+                "Date",
+                "Heure",
+                "Résultat",
+                "Score Réel",
+                "Buteurs",
+            ]
+        )
   else:
     matchs = pd.DataFrame(
         columns=[
@@ -151,12 +164,25 @@ def charger_donnees():
   if "Heure" not in matchs.columns:
     matchs["Heure"] = "20:00"
 
-  # Pronos (Adapté à ton en-tête actuel)
+  # Pronos
   if os.path.exists(PRONOS_FILE):
     try:
       pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8")
     except Exception:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="latin1", errors="ignore")
+      try:
+        pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
+      except Exception:
+        pronos = pd.DataFrame(
+            columns=[
+                "Participant",
+                "Match",
+                "Prono (1N2)",
+                "Score",
+                "Buteur",
+                "Doublé ?",
+                "Points",
+            ]
+        )
   else:
     pronos = pd.DataFrame(
         columns=[
@@ -170,7 +196,6 @@ def charger_donnees():
         ]
     )
 
-  # Sécurité si les noms de colonnes dans le CSV diffèrent légèrement
   for col in pronos.columns:
     if "Point" not in col:
       pronos[col] = pronos[col].fillna("").astype(str)
@@ -182,7 +207,10 @@ def charger_donnees():
     try:
       bonus = pd.read_csv(BONUS_FILE, encoding="utf-8")
     except Exception:
-      bonus = pd.read_csv(BONUS_FILE, encoding="latin1", errors="ignore")
+      try:
+        bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
+      except Exception:
+        bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
     bonus["Points Bonus"] = pd.to_numeric(
         bonus["Points Bonus"], errors="coerce"
     ).fillna(0)
@@ -304,13 +332,12 @@ if menu == "?? Faire mon Prono":
           choix_clean = prono_1n2.split()[0]
           buteurs_texte_str = ", ".join(buteurs_selectionnes)
 
-          # Gestion flexible des noms de colonnes pour éviter les crashs
-            col_buteur = (
-                "Buteur" if "Buteur" in df_pronos.columns else "Buteurs Pronostiqués"
-            )
-            col_double = (
-                "Doublé ?" if "Doublé ?" in df_pronos.columns else "Annonce Doublé"
-            )
+          col_buteur = (
+              "Buteur" if "Buteur" in df_pronos.columns else "Buteurs Pronostiqués"
+          )
+          col_double = (
+              "Doublé ?" if "Doublé ?" in df_pronos.columns else "Annonce Doublé"
+          )
 
           if col_buteur not in df_pronos.columns:
             df_pronos[col_buteur] = ""
