@@ -105,13 +105,13 @@ def charger_donnees():
   return matchs, pronos, bonus
 
 
-def sauvegarder_donnees(matchs, pronos, bonus):
-  matchs.to_csv(MATCHS_FILE, index=False)
-  pronos.to_csv(PRONOS_FILE, index=False)
-  bonus.to_csv(BONUS_FILE, index=False)
-
-
 df_matchs, df_pronos, df_bonus = charger_donnees()
+
+# --- NETTOYAGE RADICAL ANTI-JOE ---
+if not df_bonus.empty and "Participant" in df_bonus.columns:
+  if "Joe" in df_bonus["Participant"].values:
+    df_bonus = df_bonus[df_bonus["Participant"] != "Joe"]
+    df_bonus.to_csv(BONUS_FILE, index=False)
 
 # --- MENU LATÉRAL PROPRE ---
 st.sidebar.title("Menu")
