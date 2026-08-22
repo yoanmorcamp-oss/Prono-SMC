@@ -12,6 +12,7 @@ st.title("⚽ Concours de Pronos - Stade Malherbe de Caen")
 # --- GESTION DES FICHIERS CSV (PERSISTANCE) ---
 MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
+BONUS_FILE = "bonus.csv"  # Pour stocker les points d'avant l'appli
 
 # Effectif officiel actualisé du SMC
 EFFECTIF_SMC = [
@@ -45,7 +46,6 @@ def charger_donnees():
     matchs = pd.read_csv(MATCHS_FILE)
     for col in matchs.columns:
       matchs[col] = matchs[col].fillna("").astype(str)
-    # S'assurer que les colonnes Date et Heure existent dans les vieux fichiers CSV
     if "Date" not in matchs.columns:
       matchs["Date"] = "2026-08-25"
     if "Heure" not in matchs.columns:
@@ -83,15 +83,24 @@ def charger_donnees():
         ]
     )
 
-  return matchs, pronos
+  if os.path.exists(BONUS_FILE):
+    bonus = pd.read_csv(BONUS_FILE)
+    bonus["Points Bonus"] = pd.to_numeric(
+        bonus["Points Bonus"], errors="coerce"
+    ).fillna(0)
+  else:
+    bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
+
+  return matchs, pronos, bonus
 
 
-def sauvegarder_donnees(matchs, pronos):
+def sauvegarder_donnees(matchs, pronos, bonus):
   matchs.to_csv(MATCHS_FILE, index=False)
   pronos.to_csv(PRONOS_FILE, index=False)
+  bonus.to_csv(BONUS_FILE, index=False)
 
 
-df_matchs, df_pronos = charger_donnees()
+df_matchs, df_pronos, df_bonus = charger_donnees()
 
 # --- MENU LATÉRAL PROPRE ---
 st.sidebar.title("Menu")
@@ -114,7 +123,6 @@ if menu == "📝 Faire mon Prono":
     maintenant = datetime.now()
     matchs_disponibles = []
 
-    # On filtre les matchs dont le coup d'envoi n'est PAS encore passé
     for idx, row in df_matchs.iterrows():
       m_id = row["ID Match"]
       date_str = row.get("Date", "2026-01-01")
@@ -123,11 +131,9 @@ if menu == "📝 Faire mon Prono":
         coup_envoi = datetime.strptime(
             f"{date_str} {heure_str}", "%Y-%m-%d %H:%M"
         )
-        # Le match est dispo si on est AVANT le coup d'envoi ET qu'il n'a pas déjà un score réel validé
         if maintenant < coup_envoi and str(row["Score Réel"]).strip() == "":
           matchs_disponibles.append(m_id)
       except Exception:
-        # En cas de format de date invalide par sécurité, on regarde juste si le score n'est pas rentré
         if str(row["Score Réel"]).strip() == "":
           matchs_disponibles.append(m_id)
 
@@ -137,7 +143,30 @@ if menu == "📝 Faire mon Prono":
           " les matchs sont terminés)."
       )
     else:
-      nom_utilisateur = st.text_input("Ton Prénom / Pseudo")
+      # Récupération de tous les participants connus (pronos + bonus initiaux)
+      p_pronos = (
+          df_pronos["Participant"].unique().tolist()
+          if not df_pronos.empty
+          else []
+      )
+      p_bonus = (
+          df_bonus["Participant"].unique().tolist()
+          if not df_bonus.empty
+          else []
+      )
+      tous_participants = sorted(list(set(p_pronos + p_bonus)))
+
+      options_participants = tous_participants + ["➕ Nouveau participant"]
+
+      choix_participant = st.selectbox(
+          "Choisis ton Prénom / Pseudo", options_participants
+      )
+
+      if choix_participant == "➕ Nouveau participant":
+        nom_utilisateur = st.text_input("Entre ton nouveau pseudo :")
+      else:
+        nom_utilisateur = choix_participant
+
       match_choisi = st.selectbox("Choisis le match concerné", matchs_disponibles)
 
       col1, col2 = st.columns(2)
@@ -162,11 +191,10 @@ if menu == "📝 Faire mon Prono":
 
       if st.button("Valider mon pronostic 🚀"):
         if not nom_utilisateur.strip():
-          st.error("⚠️ Tu dois entrer ton prénom ou pseudo !")
+          st.error("⚠️ Tu dois entrer ou sélectionner un prénom/pseudo valide !")
         elif not buteurs_selectionnes:
           st.error("⚠️ Tu dois sélectionner au moins un buteur !")
         else:
-          # Double vérification de sécurité au moment du clic
           match_info = df_matchs[df_matchs["ID Match"] == match_choisi].iloc[0]
           try:
             coup_envoi = datetime.strptime(
@@ -199,7 +227,7 @@ if menu == "📝 Faire mon Prono":
             st.success(f"👍 Mis à jour {nom_utilisateur} pour {match_choisi} !")
           else:
             new_row = pd.DataFrame({
-                "Participant": [nom_utilisateur],
+                "Participant": [nom_utilisateur.strip()],
                 "Match": [match_choisi],
                 "Prono (1N2)": [choix_clean],
                 "Score": [prono_score],
@@ -210,7 +238,7 @@ if menu == "📝 Faire mon Prono":
             df_pronos = pd.concat([df_pronos, new_row], ignore_index=True)
             st.success(f"🎉 Validé {nom_utilisateur} !")
 
-          sauvegarder_donnees(df_matchs, df_pronos)
+          sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
           st.rerun()
 
     st.markdown("---")
@@ -225,20 +253,34 @@ if menu == "📝 Faire mon Prono":
 elif menu == "🏆 Classement":
   st.header("🏆 Classement Général de la Saison")
 
-  if not df_pronos.empty:
-    df_pronos["Points"] = pd.to_numeric(
-        df_pronos["Points"], errors="coerce"
-    ).fillna(0)
-    classement = (
-        df_pronos.groupby("Participant")["Points"].sum().reset_index()
-    )
-    classement = classement.sort_values(by="Points", ascending=False).reset_index(
-        drop=True
-    )
-    classement.index += 1
-    st.table(classement)
+  # On combine les points des matchs de l'appli ET les points des 2 premiers matchs (bonus initiaux)
+  p_pronos_sum = (
+      df_pronos.groupby("Participant")["Points"].sum().reset_index()
+      if not df_pronos.empty
+      else pd.DataFrame(columns=["Participant", "Points"])
+  )
+  p_bonus_sum = df_bonus.copy() if not df_bonus.empty else pd.DataFrame(columns=["Participant", "Points Bonus"])
 
-    st.subheader("📋 Historique complet")
+  if not p_pronos_sum.empty or not p_bonus_sum.empty:
+    # Fusion des deux tableaux sur le participant
+    classement_complet = pd.merge(
+        p_pronos_sum, p_bonus_sum, on="Participant", how="outer"
+    ).fillna(0)
+    classement_complet["Points Total"] = (
+        classement_complet["Points"]
+        + classement_complet["Points Bonus"]
+    )
+
+    classement_final = (
+        classement_complet[["Participant", "Points Total"]]
+        .sort_values(by="Points Total", ascending=False)
+        .reset_index(drop=True)
+    )
+    classement_final.index += 1
+
+    st.table(classement_final)
+
+    st.subheader("📋 Historique complet des pronos et points")
     st.dataframe(df_pronos, use_container_width=True)
   else:
     st.info("Le classement est vide pour l'instant.")
@@ -250,7 +292,58 @@ elif menu == "🏆 Classement":
 elif menu == "⚙️ Espace Admin":
   st.header("🔐 Espace Organisateur")
 
-  st.subheader("1. Ajouter un match du SMC")
+  st.subheader("1. Attribuer les points des 2 premiers matchs (Classement initial)")
+  with st.form("form_admin_bonus"):
+    p_pronos = (
+        df_pronos["Participant"].unique().tolist()
+        if not df_pronos.empty
+        else []
+    )
+    p_bonus = (
+        df_bonus["Participant"].unique().tolist()
+        if not df_bonus.empty
+        else []
+    )
+    tous_participants_admin = sorted(list(set(p_pronos + p_bonus)))
+
+    if not tous_participants_admin:
+      # Saisie libre si aucun participant n'existe encore
+      participant_init = st.text_input("Prénom du participant")
+    else:
+      participant_init = st.selectbox(
+          "Participant", tous_participants_admin
+      )
+
+    points_initiaux = st.number_input(
+        "Points obtenus lors des 2 premiers matchs", value=0, step=1
+    )
+    submit_bonus = st.form_submit_button("Enregistrer / Mettre à jour les points")
+
+    if submit_bonus:
+      if participant_init.strip():
+        p_nom = participant_init.strip()
+        existing_b = df_bonus[df_bonus["Participant"] == p_nom].index
+        if not existing_b.empty:
+          df_bonus.loc[existing_b[0], "Points Bonus"] = points_initiaux
+        else:
+          new_b = pd.DataFrame(
+              {"Participant": [p_nom], "Points Bonus": [points_initiaux]}
+          )
+          df_bonus = pd.concat([df_bonus, new_b], ignore_index=True)
+
+        sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
+        st.success(
+            f"Points initiaux enregistrés pour {p_nom} : {points_initiaux} pts"
+            " !"
+        )
+        st.rerun()
+
+  if not df_bonus.empty:
+    st.subheader("Points initiaux enregistrés :")
+    st.dataframe(df_bonus, use_container_width=True)
+
+  st.markdown("---")
+  st.subheader("2. Ajouter un match du SMC")
   with st.form("form_admin_match"):
     id_match = st.text_input("Nom du Match (ex: SMC - Bastia)")
     adversaire = st.text_input("Équipe adverse")
@@ -295,14 +388,14 @@ elif menu == "⚙️ Espace Admin":
           df_matchs = pd.concat([df_matchs, new_m], ignore_index=True)
           st.success(f"Match '{id_match}' créé avec succès !")
 
-        sauvegarder_donnees(df_matchs, df_pronos)
+        sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
         st.rerun()
 
   st.subheader("Matchs configurés :")
   st.dataframe(df_matchs, use_container_width=True)
 
   st.markdown("---")
-  st.subheader("2. Calculer les points")
+  st.subheader("3. Calculer les points des matchs de l'appli")
   if st.button("⚡ Lancer le calcul des points"):
     compteur_maj = 0
     for index, prono in df_pronos.iterrows():
@@ -352,7 +445,7 @@ elif menu == "⚙️ Espace Admin":
           df_pronos.loc[index, "Points"] = pts
           compteur_maj += 1
 
-    sauvegarder_donnees(df_matchs, df_pronos)
+    sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
     st.success(
         f"Calcul terminé ! {compteur_maj} pronostics évalués avec succès."
     )
