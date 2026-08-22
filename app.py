@@ -125,18 +125,17 @@ EFFECTIF_SMC = [
 
 
 def charger_donnees():
+  # MATCHS
+  matchs = None
   if os.path.exists(MATCHS_FILE):
-    try:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
-    except Exception:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8", errors="ignore")
-    for col in matchs.columns:
-      matchs[col] = matchs[col].fillna("").astype(str)
-    if "Date" not in matchs.columns:
-      matchs["Date"] = "2026-08-25"
-    if "Heure" not in matchs.columns:
-      matchs["Heure"] = "20:00"
-  else:
+    for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
+      try:
+        matchs = pd.read_csv(MATCHS_FILE, encoding=enc)
+        break
+      except Exception:
+        continue
+
+  if matchs is None:
     matchs = pd.DataFrame(
         columns=[
             "ID Match",
@@ -148,18 +147,25 @@ def charger_donnees():
             "Buteurs",
         ]
     )
-
-  if os.path.exists(PRONOS_FILE):
-    try:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
-    except Exception:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8", errors="ignore")
-    for col in pronos.columns:
-      if col != "Points":
-        pronos[col] = pronos[col].fillna("").astype(str)
-      else:
-        pronos[col] = pd.to_numeric(pronos[col], errors="coerce").fillna(0)
   else:
+    for col in matchs.columns:
+      matchs[col] = matchs[col].fillna("").astype(str)
+    if "Date" not in matchs.columns:
+      matchs["Date"] = "2026-08-25"
+    if "Heure" not in matchs.columns:
+      matchs["Heure"] = "20:00"
+
+  # PRONOS
+  pronos = None
+  if os.path.exists(PRONOS_FILE):
+    for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
+      try:
+        pronos = pd.read_csv(PRONOS_FILE, encoding=enc)
+        break
+      except Exception:
+        continue
+
+  if pronos is None:
     pronos = pd.DataFrame(
         columns=[
             "Participant",
@@ -171,19 +177,31 @@ def charger_donnees():
             "Points",
         ]
     )
+  else:
+    for col in pronos.columns:
+      if col != "Points":
+        pronos[col] = pronos[col].fillna("").astype(str)
+      else:
+        pronos[col] = pd.to_numeric(pronos[col], errors="coerce").fillna(0)
 
+  # BONUS
+  bonus = None
   if os.path.exists(BONUS_FILE):
-    try:
-      bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
-    except Exception:
-      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8", errors="ignore")
+    for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
+      try:
+        bonus = pd.read_csv(BONUS_FILE, encoding=enc)
+        break
+      except Exception:
+        continue
+
+  if bonus is None:
+    bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
+  else:
     bonus["Points Bonus"] = pd.to_numeric(
         bonus["Points Bonus"], errors="coerce"
     ).fillna(0)
     if "Participant" in bonus.columns:
       bonus = bonus[bonus["Participant"] != "Joe"]
-  else:
-    bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
 
   return matchs, pronos, bonus
 
