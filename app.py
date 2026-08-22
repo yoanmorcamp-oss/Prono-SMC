@@ -19,7 +19,7 @@ PARTICIPANTS_INITIAUX = [
     "Nathéo",
     "Adri",
     "Allan",
-    "Joe",
+    "Jo",
     "Vincent",
     "Tony",
     "Yoan",
