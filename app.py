@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="Pronos SMC - Saison 2026-2027", page_icon="‚öΩ", layout="wide"
+    page_title="Pronos SMC - Saison 2026-2027", page_icon="?", layout="wide"
 )
 
 # --- MOT DE PASSE ADMIN ---
@@ -16,6 +16,7 @@ st.markdown("""
     <style>
     .stApp {
         background-color: #f4f6f9;
+        color: #002D62;
     }
     h1 {
         color: #002D62 !important;
@@ -24,9 +25,9 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    h2, h3 {
+    h2, h3, label, p, span {
         color: #002D62 !important;
-        font-weight: 700;
+        font-weight: 600;
     }
     .stButton > button {
         background-color: #E30613 !important;
@@ -51,10 +52,17 @@ st.markdown("""
     div.block-container {
         padding-top: 2rem;
     }
+    /* Correction pour que les tableaux de donnÈes natifs restent lisibles sur mobile */
+    [data-testid="stDataFrame"] {
+        background-color: white;
+        border-radius: 8px;
+        padding: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- EN-T√äTE AVEC LOGO LOCAL ---
+# --- EN-T TE AVEC LOGO LOCAL ---
 col_logo, col_titre = st.columns([1, 8])
 
 with col_logo:
@@ -89,22 +97,22 @@ MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
 BONUS_FILE = "bonus.csv"
 
-PARTICIPANTS_INITIAUX = ["Nath√©o", "Adri", "Allan", "Jo", "Vincent", "Tony", "Yoan"]
+PARTICIPANTS_INITIAUX = ["NathÈo", "Adri", "Allan", "Jo", "Vincent", "Tony", "Yoan"]
 
 EFFECTIF_SMC = [
-    "Anthony Mandr√©a",
-    "Yannis Cl√©mentia",
+    "Anthony MandrÈa",
+    "Yannis ClÈmentia",
     "Parfait Mandanda",
     "Nassim Titebah",
-    "Diab√© Bolumbu",
+    "DiabÈ Bolumbu",
     "Sacha M'Baka",
     "Dennis Appiah",
     "Nazim Babai",
     "Hugo Lamouliatte",
-    "Josu√© Kimboma",
+    "JosuÈ Kimboma",
     "Freddy Bomo",
     "Gabin Tome",
-    "L√©o Milliner",
+    "LÈo Milliner",
     "Zoumana Bagbema",
     "Mohamed El Idrissi",
     "Samuel Noireau-Dauriat",
@@ -113,7 +121,7 @@ EFFECTIF_SMC = [
     "Armand Gnanduillet",
     "Keelyan Portut",
     "Mohamed Hafid",
-    "Salim Diakit√©",
+    "Salim DiakitÈ",
 ]
 
 
@@ -133,8 +141,8 @@ def charger_donnees():
             "Adversaire",
             "Date",
             "Heure",
-            "R√©sultat",
-            "Score R√©el",
+            "RÈsultat",
+            "Score RÈel",
             "Buteurs",
         ]
     )
@@ -153,8 +161,8 @@ def charger_donnees():
             "Match",
             "Prono (1N2)",
             "Score",
-            "Buteurs Pronostiqu√©s",
-            "Annonce Doubl√©",
+            "Buteurs PronostiquÈs",
+            "Annonce DoublÈ",
             "Points",
         ]
     )
@@ -180,10 +188,10 @@ def sauvegarder_donnees(matchs, pronos, bonus):
 
 df_matchs, df_pronos, df_bonus = charger_donnees()
 
-# --- MENU LAT√âRAL ---
-st.sidebar.title("üî¥üîµ Menu SMC")
+# --- MENU LAT…RAL ---
+st.sidebar.title("???? Menu SMC")
 menu = st.sidebar.radio(
-    "Aller vers :", ["üìù Faire mon Prono", "üèÜ Classement", "‚öôÔ∏è Espace Admin"]
+    "Aller vers :", ["?? Faire mon Prono", "?? Classement", "?? Espace Admin"]
 )
 
 
@@ -207,12 +215,12 @@ def obtenir_liste_participants():
 # ---------------------------------------------------------------------------
 # 1. ESPACE PARTICIPANTS (PRONOS)
 # ---------------------------------------------------------------------------
-if menu == "üìù Faire mon Prono":
-  st.header("üéØ Enregistrer ton Pronostic")
+if menu == "?? Faire mon Prono":
+  st.header("?? Enregistrer ton Pronostic")
 
   if df_matchs.empty:
     st.info(
-        "Aucun match n'est ouvert pour l'instant. Demande √† Yoan d'en cr√©er"
+        "Aucun match n'est ouvert pour l'instant. Demande ‡ Yoan d'en crÈer"
         " un !"
     )
   else:
@@ -227,59 +235,59 @@ if menu == "üìù Faire mon Prono":
         coup_envoi = datetime.strptime(
             f"{date_str} {heure_str}", "%Y-%m-%d %H:%M"
         )
-        if maintenant < coup_envoi and str(row["Score R√©el"]).strip() == "":
+        if maintenant < coup_envoi and str(row["Score RÈel"]).strip() == "":
           matchs_disponibles.append(m_id)
       except Exception:
-        if str(row["Score R√©el"]).strip() == "":
+        if str(row["Score RÈel"]).strip() == "":
           matchs_disponibles.append(m_id)
 
     if not matchs_disponibles:
       st.warning(
-          "üîí Aucun match n'est ouvert actuellement (le coup d'envoi est pass√© ou"
-          " les matchs sont termin√©s)."
+          "?? Aucun match n'est ouvert actuellement (le coup d'envoi est passÈ ou"
+          " les matchs sont terminÈs)."
       )
     else:
       tous_participants = obtenir_liste_participants()
-      options_participants = tous_participants + ["‚ûï Nouveau participant"]
+      options_participants = tous_participants + ["? Nouveau participant"]
 
       choix_participant = st.selectbox(
-          "Choisis ton Pr√©nom / Pseudo", options_participants
+          "Choisis ton PrÈnom / Pseudo", options_participants
       )
 
-      if choix_participant == "‚ûï Nouveau participant":
+      if choix_participant == "? Nouveau participant":
         nom_utilisateur = st.text_input(
-            "Entre ton nouveau pr√©nom / pseudo :"
+            "Entre ton nouveau prÈnom / pseudo :"
         ).strip()
       else:
         nom_utilisateur = choix_participant
 
-      match_choisi = st.selectbox("Choisis le match concern√©", matchs_disponibles)
+      match_choisi = st.selectbox("Choisis le match concernÈ", matchs_disponibles)
 
       col1, col2 = st.columns(2)
       with col1:
         prono_1n2 = st.selectbox(
-            "Issue du match", ["1 (Victoire Caen)", "N (Nul)", "2 (D√©faite)"]
+            "Issue du match", ["1 (Victoire Caen)", "N (Nul)", "2 (DÈfaite)"]
         )
-        prono_score = st.text_input("Score exact pronostiqu√© (ex: 2-0)")
+        prono_score = st.text_input("Score exact pronostiquÈ (ex: 2-0)")
 
       with col2:
         buteurs_selectionnes = st.multiselect(
-            "Buteur(s) pronostiqu√©(s) (choisis-en un ou plusieurs)", EFFECTIF_SMC
+            "Buteur(s) pronostiquÈ(s) (choisis-en un ou plusieurs)", EFFECTIF_SMC
         )
 
       st.markdown("---")
 
       options_double = ["Aucun"] + buteurs_selectionnes
       annonce_double = st.selectbox(
-          "Annonces-tu un doubl√© ? (Choisis parmi tes buteurs ci-dessus)",
+          "Annonces-tu un doublÈ ? (Choisis parmi tes buteurs ci-dessus)",
           options_double,
       )
 
-      if st.button("Valider mon pronostic üöÄ"):
+      if st.button("Valider mon pronostic ??"):
         if not nom_utilisateur:
-          st.error("‚ö†Ô∏è Tu dois entrer ou s√©lectionner un pr√©nom/pseudo valide !")
+          st.error("?? Tu dois entrer ou sÈlectionner un prÈnom/pseudo valide !")
         elif not buteurs_selectionnes:
-          st.error("‚ö†Ô∏è Tu dois s√©lectionner au moins un buteur !")
+          st.error("?? Tu dois sÈlectionner au moins un buteur !")
         else:
           match_info = df_matchs[df_matchs["ID Match"] == match_choisi].iloc[0]
           try:
@@ -289,8 +297,8 @@ if menu == "üìù Faire mon Prono":
             )
             if datetime.now() >= coup_envoi:
               st.error(
-                  "‚ùå Trop tard ! Le coup d'envoi de ce match a √©t√© donn√©, les"
-                  " pronos sont verrouill√©s."
+                  "? Trop tard ! Le coup d'envoi de ce match est dÈpassÈ, les"
+                  " pronos sont verrouillÈs."
               )
               st.stop()
           except Exception:
@@ -308,27 +316,27 @@ if menu == "üìù Faire mon Prono":
             idx = existing_idx[0]
             df_pronos.loc[idx, "Prono (1N2)"] = choix_clean
             df_pronos.loc[idx, "Score"] = prono_score
-            df_pronos.loc[idx, "Buteurs Pronostiqu√©s"] = buteurs_texte_str
-            df_pronos.loc[idx, "Annonce Doubl√©"] = annonce_double
-            st.success(f"üëç Mis √† jour {nom_utilisateur} pour {match_choisi} !")
+            df_pronos.loc[idx, "Buteurs PronostiquÈs"] = buteurs_texte_str
+            df_pronos.loc[idx, "Annonce DoublÈ"] = annonce_double
+            st.success(f"?? Mis ‡ jour {nom_utilisateur} pour {match_choisi} !")
           else:
             new_row = pd.DataFrame({
                 "Participant": [nom_utilisateur],
                 "Match": [match_choisi],
                 "Prono (1N2)": [choix_clean],
                 "Score": [prono_score],
-                "Buteurs Pronostiqu√©s": [buteurs_texte_str],
-                "Annonce Doubl√©": [annonce_double],
+                "Buteurs PronostiquÈs": [buteurs_texte_str],
+                "Annonce DoublÈ": [annonce_double],
                 "Points": [0],
             })
             df_pronos = pd.concat([df_pronos, new_row], ignore_index=True)
-            st.success(f"üéâ Valid√© {nom_utilisateur} !")
+            st.success(f"?? ValidÈ {nom_utilisateur} !")
 
           sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
           st.rerun()
 
     st.markdown("---")
-    st.subheader("üëÄ Pronos enregistr√©s :")
+    st.subheader("?? Pronos enregistrÈs :")
     if not df_pronos.empty:
       st.dataframe(df_pronos, use_container_width=True)
 
@@ -336,8 +344,8 @@ if menu == "üìù Faire mon Prono":
 # ---------------------------------------------------------------------------
 # 2. CLASSEMENT
 # ---------------------------------------------------------------------------
-elif menu == "üèÜ Classement":
-  st.header("üèÜ Classement G√©n√©ral de la Saison")
+elif menu == "?? Classement":
+  st.header("?? Classement GÈnÈral de la Saison")
 
   p_pronos_sum = (
       df_pronos.groupby("Participant")["Points"].sum().reset_index()
@@ -387,6 +395,7 @@ elif menu == "üèÜ Classement":
             padding: 10px 12px;
             border-bottom: 1px solid #f0f0f0;
             font-weight: 600;
+            color: #002D62;
         }
         .classement-table tr:nth-child(even) {
             background-color: #f9fbfd;
@@ -401,7 +410,7 @@ elif menu == "üèÜ Classement":
 
     st.markdown(html_table, unsafe_allow_html=True)
 
-    st.subheader("üìã Historique complet des pronos et points")
+    st.subheader("?? Historique complet des pronos et points")
     if not df_pronos.empty:
       st.dataframe(df_pronos, use_container_width=True)
     else:
@@ -413,8 +422,8 @@ elif menu == "üèÜ Classement":
 # ---------------------------------------------------------------------------
 # 3. ESPACE ADMIN
 # ---------------------------------------------------------------------------
-elif menu == "‚öôÔ∏è Espace Admin":
-  st.header("üîê Espace Organisateur")
+elif menu == "?? Espace Admin":
+  st.header("?? Espace Organisateur")
 
   mot_de_passe_saisi = st.text_input(
       "Entrer le mot de passe administrateur :", type="password"
@@ -422,8 +431,8 @@ elif menu == "‚öôÔ∏è Espace Admin":
 
   if mot_de_passe_saisi != MOT_DE_PASSE_ADMIN:
     if mot_de_passe_saisi != "":
-      st.error("‚ùå Mot de passe incorrect.")
-    st.warning("üîí Cet espace est r√©serv√© exclusivement √† Yoan.")
+      st.error("? Mot de passe incorrect.")
+    st.warning("?? Cet espace est rÈservÈ exclusivement ‡ Yoan.")
   else:
     st.success("Bienvenue l'Organisateur (Yoan) !")
 
@@ -438,7 +447,7 @@ elif menu == "‚öôÔ∏è Espace Admin":
           "Points obtenus lors des 2 premiers matchs", value=0, step=1
       )
       submit_bonus = st.form_submit_button(
-          "Enregistrer / Mettre √† jour les points"
+          "Enregistrer / Mettre ‡ jour les points"
       )
 
       if submit_bonus:
@@ -455,20 +464,20 @@ elif menu == "‚öôÔ∏è Espace Admin":
 
           sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
           st.success(
-              f"Points initiaux enregistr√©s pour {p_nom} : {points_initiaux} pts"
+              f"Points initiaux enregistrÈs pour {p_nom} : {points_initiaux} pts"
               " !"
           )
           st.rerun()
 
     if not df_bonus.empty:
-      st.subheader("Points initiaux enregistr√©s :")
+      st.subheader("Points initiaux enregistrÈs :")
       st.dataframe(df_bonus, use_container_width=True)
 
     st.markdown("---")
     st.subheader("2. Ajouter un match du SMC")
     with st.form("form_admin_match"):
       id_match = st.text_input("Nom du Match (ex: SMC - Bastia)")
-      adversaire = st.text_input("√âquipe adverse")
+      adversaire = st.text_input("…quipe adverse")
 
       col_d1, col_d2 = st.columns(2)
       with col_d1:
@@ -481,10 +490,10 @@ elif menu == "‚öôÔ∏è Espace Admin":
         )
 
       resultat_reel = st.selectbox(
-          "R√©sultat R√©el (√Ä remplir apr√®s le match)", ["", "1", "N", "2"]
+          "RÈsultat RÈel (¿ remplir aprËs le match)", ["", "1", "N", "2"]
       )
-      score_reel = st.text_input("Score R√©el (ex: 2-1)")
-      buteurs_reels = st.text_input("Buteurs r√©els (ex: Botella, Hafid)")
+      score_reel = st.text_input("Score RÈel (ex: 2-1)")
+      buteurs_reels = st.text_input("Buteurs rÈels (ex: Botella, Hafid)")
 
       submit_admin_match = st.form_submit_button("Enregistrer le match")
 
@@ -495,32 +504,32 @@ elif menu == "‚öôÔ∏è Espace Admin":
             idx = existing_m_idx[0]
             df_matchs.loc[idx, "Date"] = date_match
             df_matchs.loc[idx, "Heure"] = heure_match
-            df_matchs.loc[idx, "R√©sultat"] = resultat_reel
-            df_matchs.loc[idx, "Score R√©el"] = score_reel
+            df_matchs.loc[idx, "RÈsultat"] = resultat_reel
+            df_matchs.loc[idx, "Score RÈel"] = score_reel
             df_matchs.loc[idx, "Buteurs"] = buteurs_reels
-            st.success(f"Match '{id_match}' mis √† jour !")
+            st.success(f"Match '{id_match}' mis ‡ jour !")
           else:
             new_m = pd.DataFrame({
                 "ID Match": [id_match],
                 "Adversaire": [adversaire],
                 "Date": [date_match],
                 "Heure": [heure_match],
-                "R√©sultat": [resultat_reel],
-                "Score R√©el": [score_reel],
+                "RÈsultat": [resultat_reel],
+                "Score RÈel": [score_reel],
                 "Buteurs": [buteurs_reels],
             })
             df_matchs = pd.concat([df_matchs, new_m], ignore_index=True)
-            st.success(f"Match '{id_match}' cr√©√© avec succ√®s !")
+            st.success(f"Match '{id_match}' crÈÈ avec succËs !")
 
           sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
           st.rerun()
 
-    st.subheader("Matchs configur√©s :")
+    st.subheader("Matchs configurÈs :")
     st.dataframe(df_matchs, use_container_width=True)
 
     st.markdown("---")
     st.subheader("3. Calculer les points des matchs de l'appli")
-    if st.button("‚ö° Lancer le calcul des points"):
+    if st.button("? Lancer le calcul des points"):
       compteur_maj = 0
       for index, prono in df_pronos.iterrows():
         pts = 0
@@ -528,8 +537,8 @@ elif menu == "‚öôÔ∏è Espace Admin":
         match_correspondant = df_matchs[df_matchs["ID Match"] == m_id]
 
         if not match_correspondant.empty:
-          res_reel = str(match_correspondant.iloc[0]["R√©sultat"]).strip()
-          sc_reel = str(match_correspondant.iloc[0]["Score R√©el"]).strip()
+          res_reel = str(match_correspondant.iloc[0]["RÈsultat"]).strip()
+          sc_reel = str(match_correspondant.iloc[0]["Score RÈel"]).strip()
           buts_reel = str(match_correspondant.iloc[0]["Buteurs"]).lower()
 
           if res_reel != "":
@@ -545,7 +554,7 @@ elif menu == "‚öôÔ∏è Espace Admin":
             ]
 
             buteurs_pronos_texte = str(
-                prono["Buteurs Pronostiqu√©s"]
+                prono["Buteurs PronostiquÈs"]
             ).lower()
             liste_buteurs_pronos = [
                 b.strip()
@@ -557,7 +566,7 @@ elif menu == "‚öôÔ∏è Espace Admin":
               if b_prono in liste_buteurs_reels:
                 pts += 3
 
-            joueur_double = str(prono["Annonce Doubl√©"]).strip().lower()
+            joueur_double = str(prono["Annonce DoublÈ"]).strip().lower()
             if joueur_double != "" and joueur_double != "aucun":
               nb_buts_joueur = liste_buteurs_reels.count(joueur_double)
               if nb_buts_joueur >= 2:
@@ -570,6 +579,6 @@ elif menu == "‚öôÔ∏è Espace Admin":
 
       sauvegarder_donnees(df_matchs, df_pronos, df_bonus)
       st.success(
-          f"Calcul termin√© ! {compteur_maj} pronostics √©valu√©s avec succ√®s."
+          f"Calcul terminÈ ! {compteur_maj} pronostics ÈvaluÈs avec succËs."
       )
       st.rerun()
