@@ -91,7 +91,7 @@ with col_titre:
       unsafe_allow_html=True,
   )
 
-# --- GESTION DES FICHIERS CSV (PERSISTANCE ROBUSTE) ---
+# --- GESTION DES FICHIERS CSV ---
 MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
 BONUS_FILE = "bonus.csv"
@@ -125,23 +125,13 @@ EFFECTIF_SMC = [
 
 
 def charger_donnees():
-  # --- MATCHS ---
-  matchs = None
+  # Matchs
   if os.path.exists(MATCHS_FILE):
-    for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
-      try:
-        matchs = pd.read_csv(MATCHS_FILE, encoding=enc, on_bad_lines="skip")
-        break
-      except Exception:
-        continue
-    # Si le fichier est complètement corrompu et illisible, on le supprime pour repartir sur du propre
-    if matchs is None:
-      try:
-        os.remove(MATCHS_FILE)
-      except Exception:
-        pass
-
-  if matchs is None or matchs.empty:
+    try:
+      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8")
+    except Exception:
+      matchs = pd.read_csv(MATCHS_FILE, encoding="latin1", errors="ignore")
+  else:
     matchs = pd.DataFrame(
         columns=[
             "ID Match",
@@ -153,74 +143,51 @@ def charger_donnees():
             "Buteurs",
         ]
     )
-  else:
-    for col in matchs.columns:
-      matchs[col] = matchs[col].fillna("").astype(str)
-    if "Date" not in matchs.columns:
-      matchs["Date"] = "2026-08-25"
-    if "Heure" not in matchs.columns:
-      matchs["Heure"] = "20:00"
 
-  # --- PRONOS ---
-  pronos = None
+  for col in matchs.columns:
+    matchs[col] = matchs[col].fillna("").astype(str)
+  if "Date" not in matchs.columns:
+    matchs["Date"] = "2026-08-25"
+  if "Heure" not in matchs.columns:
+    matchs["Heure"] = "20:00"
+
+  # Pronos (Adapté à ton en-tête actuel)
   if os.path.exists(PRONOS_FILE):
-    for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
-      try:
-        pronos = pd.read_csv(PRONOS_FILE, encoding=enc, on_bad_lines="skip")
-        break
-      except Exception:
-        continue
-    if pronos is None:
-      try:
-        os.remove(PRONOS_FILE)
-      except Exception:
-        pass
-
-  if pronos is None or pronos.empty:
+    try:
+      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8")
+    except Exception:
+      pronos = pd.read_csv(PRONOS_FILE, encoding="latin1", errors="ignore")
+  else:
     pronos = pd.DataFrame(
         columns=[
             "Participant",
             "Match",
             "Prono (1N2)",
             "Score",
-            "Buteurs Pronostiqués",
-            "Annonce Doublé",
+            "Buteur",
+            "Doublé ?",
             "Points",
         ]
     )
-  else:
-    for col in pronos.columns:
-      if col != "Points":
-        pronos[col] = pronos[col].fillna("").astype(str)
-      else:
-        pronos[col] = pd.to_numeric(pronos[col], errors="coerce").fillna(0)
 
-  # --- BONUS ---
-  bonus = None
-  if os.path.exists(BONUS_FILE):
-    for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1"]:
-      try:
-        bonus = pd.read_csv(BONUS_FILE, encoding=enc, on_bad_lines="skip")
-        break
-      except Exception:
-        continue
-    if bonus is None:
-      try:
-        os.remove(BONUS_FILE)
-      except Exception:
-        pass
-
-  if bonus is None or bonus.empty:
-    bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
-  else:
-    if "Points Bonus" in bonus.columns:
-      bonus["Points Bonus"] = pd.to_numeric(
-          bonus["Points Bonus"], errors="coerce"
-      ).fillna(0)
+  # Sécurité si les noms de colonnes dans le CSV diffèrent légèrement
+  for col in pronos.columns:
+    if "Point" not in col:
+      pronos[col] = pronos[col].fillna("").astype(str)
     else:
-      bonus["Points Bonus"] = 0
-    if "Participant" in bonus.columns:
-      bonus = bonus[bonus["Participant"] != "Joe"]
+      pronos[col] = pd.to_numeric(pronos[col], errors="coerce").fillna(0)
+
+  # Bonus
+  if os.path.exists(BONUS_FILE):
+    try:
+      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8")
+    except Exception:
+      bonus = pd.read_csv(BONUS_FILE, encoding="latin1", errors="ignore")
+    bonus["Points Bonus"] = pd.to_numeric(
+        bonus["Points Bonus"], errors="coerce"
+    ).fillna(0)
+  else:
+    bonus = pd.DataFrame(columns=["Participant", "Points Bonus"])
 
   return matchs, pronos, bonus
 
@@ -334,23 +301,21 @@ if menu == "?? Faire mon Prono":
         elif not buteurs_selectionnes:
           st.error("?? Tu dois sélectionner au moins un buteur !")
         else:
-          match_info = df_matchs[df_matchs["ID Match"] == match_choisi].iloc[0]
-          try:
-            coup_envoi = datetime.strptime(
-                f"{match_info.get('Date', '2026-08-25')} {match_info.get('Heure', '20:00')}",
-                "%Y-%m-%d %H:%M",
-            )
-            if datetime.now() >= coup_envoi:
-              st.error(
-                  "? Trop tard ! Le coup d'envoi de ce match est dépassé, les"
-                  " pronos sont verrouillés."
-              )
-              st.stop()
-          except Exception:
-            pass
-
           choix_clean = prono_1n2.split()[0]
           buteurs_texte_str = ", ".join(buteurs_selectionnes)
+
+          # Gestion flexible des noms de colonnes pour éviter les crashs
+            col_buteur = (
+                "Buteur" if "Buteur" in df_pronos.columns else "Buteurs Pronostiqués"
+            )
+            col_double = (
+                "Doublé ?" if "Doublé ?" in df_pronos.columns else "Annonce Doublé"
+            )
+
+          if col_buteur not in df_pronos.columns:
+            df_pronos[col_buteur] = ""
+          if col_double not in df_pronos.columns:
+            df_pronos[col_double] = ""
 
           existing_idx = df_pronos[
               (df_pronos["Participant"] == nom_utilisateur)
@@ -361,8 +326,8 @@ if menu == "?? Faire mon Prono":
             idx = existing_idx[0]
             df_pronos.loc[idx, "Prono (1N2)"] = choix_clean
             df_pronos.loc[idx, "Score"] = prono_score
-            df_pronos.loc[idx, "Buteurs Pronostiqués"] = buteurs_texte_str
-            df_pronos.loc[idx, "Annonce Doublé"] = annonce_double
+            df_pronos.loc[idx, col_buteur] = buteurs_texte_str
+            df_pronos.loc[idx, col_double] = annonce_double
             st.success(f"?? Mis à jour {nom_utilisateur} pour {match_choisi} !")
           else:
             new_row = pd.DataFrame({
@@ -370,8 +335,8 @@ if menu == "?? Faire mon Prono":
                 "Match": [match_choisi],
                 "Prono (1N2)": [choix_clean],
                 "Score": [prono_score],
-                "Buteurs Pronostiqués": [buteurs_texte_str],
-                "Annonce Doublé": [annonce_double],
+                col_buteur: [buteurs_texte_str],
+                col_double: [annonce_double],
                 "Points": [0],
             })
             df_pronos = pd.concat([df_pronos, new_row], ignore_index=True)
@@ -576,6 +541,13 @@ elif menu == "?? Espace Admin":
     st.subheader("3. Calculer les points des matchs de l'appli")
     if st.button("? Lancer le calcul des points"):
       compteur_maj = 0
+      col_buteur = (
+          "Buteur" if "Buteur" in df_pronos.columns else "Buteurs Pronostiqués"
+      )
+      col_double = (
+          "Doublé ?" if "Doublé ?" in df_pronos.columns else "Annonce Doublé"
+      )
+
       for index, prono in df_pronos.iterrows():
         pts = 0
         m_id = str(prono["Match"])
@@ -598,9 +570,9 @@ elif menu == "?? Espace Admin":
                 if b.strip() != ""
             ]
 
-            buteurs_pronos_texte = str(
-                prono["Buteurs Pronostiqués"]
-            ).lower()
+            buteurs_pronos_texte = (
+                str(prono[col_buteur]).lower() if col_buteur in prono else ""
+            )
             liste_buteurs_pronos = [
                 b.strip()
                 for b in buteurs_pronos_texte.split(",")
@@ -611,10 +583,14 @@ elif menu == "?? Espace Admin":
               if b_prono in liste_buteurs_reels:
                 pts += 3
 
-            joueur_double = str(prono["Annonce Doublé"]).strip().lower()
+            joueur_double = (
+                str(prono[col_double]).strip().lower()
+                if col_double in prono
+                else ""
+            )
             if joueur_double != "" and joueur_double != "aucun":
               nb_buts_joueur = liste_buteurs_reels.count(joueur_double)
-              if nb_buts_joueur >=ze >= 2:  # géré proprement
+              if nb_buts_joueur >= 2:
                 pts += 5
               else:
                 pts -= 3
