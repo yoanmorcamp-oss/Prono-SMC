@@ -14,7 +14,7 @@ MATCHS_FILE = "matchs.csv"
 PRONOS_FILE = "pronos.csv"
 BONUS_FILE = "bonus.csv"
 
-# Liste officielle de vos participants
+# Liste officielle de vos participants (avec "Jo")
 PARTICIPANTS_INITIAUX = [
     "Nathéo",
     "Adri",
@@ -120,7 +120,6 @@ menu = st.sidebar.radio(
 )
 
 
-# Fonction pour récupérer tous les participants (fixes + ceux déjà enregistrés + nouveaux)
 def obtenir_liste_participants():
   p_pronos = (
       df_pronos["Participant"].unique().tolist()
@@ -176,7 +175,6 @@ if menu == "📝 Faire mon Prono":
           "Choisis ton Prénom / Pseudo", options_participants
       )
 
-      # Le champ texte apparaît uniquement si l'on choisit l'option d'ajout
       if choix_participant == "➕ Nouveau participant":
         nom_utilisateur = st.text_input(
             "Entre ton nouveau prénom / pseudo :"
