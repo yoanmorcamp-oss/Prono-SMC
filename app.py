@@ -7,8 +7,8 @@ st.set_page_config(
     page_title="Pronos SMC - Saison 2026-2027", page_icon="⚽", layout="wide"
 )
 
-# --- MOT DE PASSE ADMIN (Modifie-le ici si besoin) ---
-MOT_DE_PASSE_ADMIN = "yoan"  # Change "yoan" par ton mot de passe secret
+# --- MOT DE PASSE ADMIN ---
+MOT_DE_PASSE_ADMIN = "yoan"  # Modifie-le ici si besoin
 
 # --- DESIGN STADE MALHERBE (PRO & LISIBLE) ---
 st.markdown("""
@@ -63,13 +63,23 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- EN-TÊTE AVEC TON LOGO LOCAL (logo_smc.png) ---
+# --- EN-TÊTE AVEC CHARGEMENT ULTRA-ROBUSTE DU LOGO ---
 col_logo, col_titre = st.columns([1, 8])
+
 with col_logo:
-  if os.path.exists("logo_smc.png"):
-    st.image("logo_smc.png", width=85)
+  # On détermine le chemin absolu du dossier où se trouve ce fichier app.py
+  dossier_script = os.path.dirname(os.path.abspath(__file__))
+  chemin_logo = os.path.join(dossier_script, "logo_smc.png")
+
+  if os.path.exists(chemin_logo):
+    st.image(chemin_logo, width=85)
   else:
-    st.warning("⚠️ logo_smc.png introuvable dans le dossier.")
+    # Solution de secours si __file__ pose un souci selon l'IDE
+    fallback_path = os.path.abspath("logo_smc.png")
+    if os.path.exists(fallback_path):
+      st.image(fallback_path, width=85)
+    else:
+      st.error(f"Logo introuvable dans : {dossier_script}")
 
 with col_titre:
   st.markdown(
