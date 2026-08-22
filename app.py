@@ -127,9 +127,9 @@ EFFECTIF_SMC = [
 def charger_donnees():
   if os.path.exists(MATCHS_FILE):
     try:
-      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8")
-    except UnicodeDecodeError:
       matchs = pd.read_csv(MATCHS_FILE, encoding="latin1")
+    except Exception:
+      matchs = pd.read_csv(MATCHS_FILE, encoding="utf-8", errors="ignore")
     for col in matchs.columns:
       matchs[col] = matchs[col].fillna("").astype(str)
     if "Date" not in matchs.columns:
@@ -151,9 +151,9 @@ def charger_donnees():
 
   if os.path.exists(PRONOS_FILE):
     try:
-      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8")
-    except UnicodeDecodeError:
       pronos = pd.read_csv(PRONOS_FILE, encoding="latin1")
+    except Exception:
+      pronos = pd.read_csv(PRONOS_FILE, encoding="utf-8", errors="ignore")
     for col in pronos.columns:
       if col != "Points":
         pronos[col] = pronos[col].fillna("").astype(str)
@@ -174,9 +174,9 @@ def charger_donnees():
 
   if os.path.exists(BONUS_FILE):
     try:
-      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8")
-    except UnicodeDecodeError:
       bonus = pd.read_csv(BONUS_FILE, encoding="latin1")
+    except Exception:
+      bonus = pd.read_csv(BONUS_FILE, encoding="utf-8", errors="ignore")
     bonus["Points Bonus"] = pd.to_numeric(
         bonus["Points Bonus"], errors="coerce"
     ).fillna(0)
